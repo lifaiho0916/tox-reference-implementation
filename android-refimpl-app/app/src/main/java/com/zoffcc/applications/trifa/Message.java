@@ -19,16 +19,14 @@
 
 package com.zoffcc.applications.trifa;
 
+import androidx.annotation.Nullable;
+
 import com.github.gfx.android.orma.annotation.Column;
 import com.github.gfx.android.orma.annotation.PrimaryKey;
 import com.github.gfx.android.orma.annotation.Table;
 
-import androidx.annotation.Nullable;
-
 import static com.zoffcc.applications.trifa.TRIFAGlobals.TRIFA_MSG_TYPE.TRIFA_MSG_TYPE_TEXT;
 import static com.zoffcc.applications.trifa.ToxVars.TOX_FILE_CONTROL.TOX_FILE_CONTROL_PAUSE;
-import static com.zoffcc.applications.trifa.ToxVars.TOX_FILE_KIND.TOX_FILE_KIND_DATA;
-import static com.zoffcc.applications.trifa.ToxVars.TOX_FILE_KIND.TOX_FILE_KIND_FTV2;
 
 @Table
 public class Message
@@ -68,7 +66,7 @@ public class Message
 
     @Column(helpers = Column.Helpers.ALL, defaultExpr = "0")
     @Nullable
-    long sent_timestamp = 0L; // the difference, measured in milliseconds, between the current time and midnight, January 1, 1970 UTC
+    long sent_timestamp = 0L;
 
     @Column(helpers = Column.Helpers.ALL, defaultExpr = "0")
     @Nullable
@@ -76,7 +74,7 @@ public class Message
 
     @Column(indexed = true, defaultExpr = "0")
     @Nullable
-    long rcvd_timestamp = 0L; // the difference, measured in milliseconds, between the current time and midnight, January 1, 1970 UTC
+    long rcvd_timestamp = 0L;
 
     @Column(indexed = true, defaultExpr = "0")
     @Nullable
@@ -91,7 +89,7 @@ public class Message
     @Column(indexed = true, helpers = Column.Helpers.ALL)
     boolean is_new = true;
 
-    @Column(indexed = true, helpers = Column.Helpers.ALL)
+    @Column(helpers = Column.Helpers.ALL)
     @Nullable
     String text = null;
 
@@ -110,29 +108,8 @@ public class Message
     @Column(indexed = true, defaultExpr = "0")
     int msg_version; // 0 -> old Message, 1 -> for MessageV2 Message
 
-    @Column(indexed = true, defaultExpr = "" + TRIFAGlobals.MAX_TEXTMSG_RESEND_COUNT_OLDMSG_VERSION)
-    int resend_count; // how many times we have tried to resend old text messages
-
-    @Column(indexed = true, defaultExpr = "false")
-    boolean storage_frame_work = false;
-
-    @Column(indexed = true, defaultExpr = "false", helpers = Column.Helpers.ALL)
-    boolean ft_outgoing_queued = false;
-
-    @Column(indexed = true, defaultExpr = "false", helpers = Column.Helpers.ALL)
-    boolean msg_at_relay = false;
-
-    @Column(indexed = true, helpers = Column.Helpers.ALL)
-    @Nullable
-    String msg_idv3_hash = null; // 32byte hash, used for MessageV3 Messages! and otherwise NULL
-
-    @Column(helpers = Column.Helpers.ALL)
-    @Nullable
-    int sent_push = 0;
-
-    @Column(helpers = Column.Helpers.ALL, defaultExpr = "0")
-    @Nullable
-    int filetransfer_kind = TOX_FILE_KIND_DATA.value;
+    @Column(indexed = true, defaultExpr = "2")
+    int resend_count; // 2 -> do not resend msg anymore, 0 or 1 -> resend count
 
     static Message deep_copy(Message in)
     {
@@ -161,12 +138,6 @@ public class Message
         out.msg_version = in.msg_version;
         out.raw_msgv2_bytes = in.raw_msgv2_bytes;
         out.resend_count = in.resend_count;
-        out.storage_frame_work = in.storage_frame_work;
-        out.ft_outgoing_queued = in.ft_outgoing_queued;
-        out.msg_at_relay = in.msg_at_relay;
-        out.msg_idv3_hash = in.msg_idv3_hash;
-        out.sent_push = in.sent_push;
-        out.filetransfer_kind = in.filetransfer_kind;
 
         return out;
     }
@@ -180,8 +151,6 @@ public class Message
                ", sent_timestamp=" + sent_timestamp + ", rcvd_timestamp=" + rcvd_timestamp + ", read=" + read +
                ", send_retries=" + send_retries + ", text=" + "xxxxxx" + ", filename_fullpath=" + filename_fullpath +
                ", is_new=" + is_new + ", msg_id_hash=" + msg_id_hash + ", msg_version=" + msg_version +
-               ", resend_count=" + resend_count + ", raw_msgv2_bytes=" + "xxxxxx" + ", storage_frame_work=" +
-               storage_frame_work + ", ft_outgoing_queued=" + ft_outgoing_queued + ", msg_at_relay=" + msg_at_relay +
-               ", sent_push=" + sent_push + ", filetransfer_kind=" + filetransfer_kind;
+               ", resend_count=" + resend_count + ", raw_msgv2_bytes=" + "xxxxxx";
     }
 }

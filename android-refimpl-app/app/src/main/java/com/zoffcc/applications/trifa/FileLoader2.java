@@ -33,8 +33,8 @@ import com.bumptech.glide.signature.ObjectKey;
 
 import java.io.File;
 
-import static com.zoffcc.applications.trifa.HelperGeneric.copy_vfs_file_to_real_file;
 import static com.zoffcc.applications.trifa.MainActivity.SD_CARD_TMP_DIR;
+import static com.zoffcc.applications.trifa.HelperGeneric.copy_vfs_file_to_real_file;
 
 public class FileLoader2 implements ModelLoader<info.guardianproject.iocipher.File, java.io.InputStream>
 {
@@ -135,19 +135,8 @@ public class FileLoader2 implements ModelLoader<info.guardianproject.iocipher.Fi
                         rand_num = (long) (Math.random() * 10000d);
                         try
                         {
-                            String extension = "";
-                            //**//extension = get_fileExt(in.getName());
-                            if ((extension != null) && (extension.length() > 0))
-                            {
-                                extension = "." + extension;
-                            }
-                            else
-                            {
-                                extension = "";
-                            }
-
                             temp_file_name = copy_vfs_file_to_real_file(in.getParent(), in.getName(), SD_CARD_TMP_DIR,
-                                                                        "_glide" + "_" + rand_num + extension);
+                                                                        "_glide" + "_" + rand_num);
                         }
                         catch (Exception e)
                         {
@@ -160,7 +149,7 @@ public class FileLoader2 implements ModelLoader<info.guardianproject.iocipher.Fi
                 t.join();
                 // Log.i(TAG, "loadData:" + rand_num_model + ":" + "005");
 
-                // Log.i(TAG, "loadData:fileloader2:loadData:000a:temp_file_name=" + temp_file_name);
+                // System.out.println("fileloader2:loadData:000a:temp_file_name=" + temp_file_name);
                 //try
                 //{
                 //    File tt = new java.io.File(SD_CARD_TMP_DIR + "/" + temp_file_name);
@@ -201,7 +190,7 @@ public class FileLoader2 implements ModelLoader<info.guardianproject.iocipher.Fi
             }
             catch (Exception e)
             {
-                Log.i(TAG, "fileloader2:EE:"); // + e.getMessage());
+                System.out.println("fileloader2:EE:"); // + e.getMessage());
                 // e.printStackTrace();
             }
             // System.out.println("fileloader2:loadData:004:onDataReady=" + out);

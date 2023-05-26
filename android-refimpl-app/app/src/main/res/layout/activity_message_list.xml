@@ -14,31 +14,7 @@
         android:layout_height="wrap_content"
         android:background="?attr/colorPrimary"
         android:minHeight="?attr/actionBarSize"
-        app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
-
-        <TextView
-            android:layout_width="10dp"
-            android:layout_height="match_parent"
-            android:background="@null"
-            android:text="" />
-
-        <com.zoffcc.applications.trifa.CustomSpinner
-            android:id="@+id/spinner_filter_msgs"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:layout_marginLeft="0dp"
-            android:paddingLeft="0dp" />
-
-        <androidx.appcompat.widget.SearchView
-            android:id="@+id/search_view_messages"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:focusable="false"
-            app:iconifiedByDefault="false"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-    </androidx.appcompat.widget.Toolbar>
+        app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -79,7 +55,7 @@
             android:gravity="center_vertical"
             android:padding="10dp"
             android:text="@string/layout___name"
-            android:textColor="@color/md_black_1000"
+            android:textColor="@android:color/primary_text_light"
             android:textSize="15sp" />
 
         <TextView
@@ -144,7 +120,7 @@
             android:cursorVisible="true"
             android:singleLine="true"
             android:text=""
-            android:textColor="@color/md_black_1000"
+            android:textColor="@android:color/primary_text_light"
             android:textSize="12sp" />
     </LinearLayout>
 
@@ -165,7 +141,7 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:padding="7dp"
             android:scaleType="fitCenter"
-            app:srcCompat="@drawable/i_emoji_google_category_people"
+            app:srcCompat="@drawable/emoji_ios_category_people"
             tools:ignore="ContentDescription" />
 
         <com.vanniktech.emoji.EmojiEditText
@@ -173,14 +149,14 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:imeOptions="flagNoPersonalizedLearning|actionSend"
             android:cursorVisible="true"
             android:ellipsize="end"
-            android:imeOptions="flagNoPersonalizedLearning|actionSend"
             android:inputType="textMultiLine"
             android:maxLines="5"
             android:singleLine="false"
             android:text=""
-            android:textColor="@color/md_black_1000"
+            android:textColor="@android:color/primary_text_light"
             android:textSize="19sp" />
 
         <LinearLayout

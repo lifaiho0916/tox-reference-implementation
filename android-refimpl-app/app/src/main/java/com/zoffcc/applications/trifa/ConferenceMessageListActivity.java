@@ -44,6 +44,7 @@ import com.mikepenz.materialdrawer.AccountHeaderBuilder;
 import com.mikepenz.materialdrawer.Drawer;
 import com.mikepenz.materialdrawer.DrawerBuilder;
 import com.mikepenz.materialdrawer.holder.BadgeStyle;
+import com.mikepenz.materialdrawer.holder.StringHolder;
 import com.mikepenz.materialdrawer.model.ProfileDrawerItem;
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 import com.mikepenz.materialdrawer.model.interfaces.IProfile;
@@ -57,40 +58,28 @@ import com.vanniktech.emoji.listeners.OnSoftKeyboardOpenListener;
 import androidx.annotation.Px;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.view.ActionMode;
-import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
-import androidx.core.content.ContextCompat;
 
-import static com.zoffcc.applications.trifa.CallingActivity.initializeScreenshotSecurity;
-import static com.zoffcc.applications.trifa.ConferenceMessageListFragment.conf_search_messages_text;
 import static com.zoffcc.applications.trifa.HelperConference.insert_into_conference_message_db;
 import static com.zoffcc.applications.trifa.HelperConference.is_conference_active;
 import static com.zoffcc.applications.trifa.HelperConference.tox_conference_by_confid__wrapper;
 import static com.zoffcc.applications.trifa.HelperFriend.resolve_name_for_pubkey;
 import static com.zoffcc.applications.trifa.HelperFriend.tox_friend_by_public_key__wrapper;
-import static com.zoffcc.applications.trifa.HelperGeneric.do_fade_anim_on_fab;
+import static com.zoffcc.applications.trifa.HelperFriend.tox_friend_get_public_key__wrapper;
 import static com.zoffcc.applications.trifa.HelperMsgNotification.change_msg_notification;
-import static com.zoffcc.applications.trifa.MainActivity.PREF__X_battery_saving_mode;
-import static com.zoffcc.applications.trifa.MainActivity.PREF__messageview_paging;
 import static com.zoffcc.applications.trifa.MainActivity.PREF__use_incognito_keyboard;
-import static com.zoffcc.applications.trifa.MainActivity.PREF__window_security;
 import static com.zoffcc.applications.trifa.MainActivity.SelectFriendSingleActivity_ID;
-import static com.zoffcc.applications.trifa.MainActivity.context_s;
 import static com.zoffcc.applications.trifa.MainActivity.lookup_peer_listnum_pubkey;
 import static com.zoffcc.applications.trifa.MainActivity.main_handler_s;
 import static com.zoffcc.applications.trifa.MainActivity.selected_conference_messages;
 import static com.zoffcc.applications.trifa.MainActivity.tox_conference_invite;
 import static com.zoffcc.applications.trifa.MainActivity.tox_conference_offline_peer_count;
-import static com.zoffcc.applications.trifa.MainActivity.tox_conference_offline_peer_get_name;
-import static com.zoffcc.applications.trifa.MainActivity.tox_conference_offline_peer_get_public_key;
 import static com.zoffcc.applications.trifa.MainActivity.tox_conference_peer_count;
 import static com.zoffcc.applications.trifa.MainActivity.tox_conference_peer_get_name;
 import static com.zoffcc.applications.trifa.MainActivity.tox_conference_peer_get_public_key;
 import static com.zoffcc.applications.trifa.MainActivity.tox_conference_send_message;
 import static com.zoffcc.applications.trifa.MainActivity.tox_max_message_length;
 import static com.zoffcc.applications.trifa.TRIFAGlobals.NOTIFICATION_EDIT_ACTION.NOTIFICATION_EDIT_ACTION_REMOVE;
-import static com.zoffcc.applications.trifa.TRIFAGlobals.TEXT_QUOTE_STRING_1;
-import static com.zoffcc.applications.trifa.TRIFAGlobals.TEXT_QUOTE_STRING_2;
 import static com.zoffcc.applications.trifa.TRIFAGlobals.TRIFA_MSG_TYPE.TRIFA_MSG_TYPE_TEXT;
 import static com.zoffcc.applications.trifa.TRIFAGlobals.global_last_activity_for_battery_savings_ts;
 import static com.zoffcc.applications.trifa.TRIFAGlobals.global_my_toxid;
@@ -104,7 +93,7 @@ public class ConferenceMessageListActivity extends AppCompatActivity
     String conf_id = "-1";
     String conf_id_prev = "-1";
     //
-    static com.vanniktech.emoji.EmojiEditText ml_new_conf_message = null;
+    com.vanniktech.emoji.EmojiEditText ml_new_message = null;
     EmojiPopup emojiPopup = null;
     ImageView insert_emoji = null;
     TextView ml_maintext = null;
@@ -117,8 +106,6 @@ public class ConferenceMessageListActivity extends AppCompatActivity
     static boolean attachemnt_instead_of_send = true;
     static ActionMode amode = null;
     static MenuItem amode_save_menu_item = null;
-    static MenuItem amode_info_menu_item = null;
-    SearchView messageSearchView = null;
 
     // main drawer ----------
     Drawer conference_message_drawer = null;
@@ -139,17 +126,7 @@ public class ConferenceMessageListActivity extends AppCompatActivity
 
         amode = null;
         amode_save_menu_item = null;
-        amode_info_menu_item = null;
         selected_conference_messages.clear();
-
-        try
-        {
-            // reset search and filter flags, sooner
-            conf_search_messages_text = null;
-        }
-        catch (Exception e)
-        {
-        }
 
         conferences_handler = new Handler(getMainLooper());
         conferences_handler_s = conferences_handler;
@@ -233,32 +210,17 @@ public class ConferenceMessageListActivity extends AppCompatActivity
 
 
         rootView = (ViewGroup) findViewById(R.id.emoji_bar);
-        ml_new_conf_message = (com.vanniktech.emoji.EmojiEditText) findViewById(R.id.ml_new_message);
-
-        messageSearchView = (SearchView) findViewById(R.id.conf_search_view_messages);
-        messageSearchView.setQueryHint(getString(R.string.messages_search_default_text));
-        messageSearchView.setIconifiedByDefault(true);
-
-        try
-        {
-            // reset search and filter flags
-            messageSearchView.setQuery("", false);
-            messageSearchView.setIconified(true);
-            conf_search_messages_text = null;
-        }
-        catch (Exception e)
-        {
-        }
+        ml_new_message = (com.vanniktech.emoji.EmojiEditText) findViewById(R.id.ml_new_message);
 
         // give focus to text input
-        ml_new_conf_message.requestFocus();
+        ml_new_message.requestFocus();
         try
         {
             // hide softkeyboard initially
             // since it takes a lot of screen space
             getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
         }
-        catch (Exception e)
+        catch(Exception e)
         {
         }
 
@@ -275,90 +237,12 @@ public class ConferenceMessageListActivity extends AppCompatActivity
         ml_icon.setImageResource(R.drawable.circle_red);
         set_conference_connection_status_icon();
 
-        messageSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener()
-        {
-
-            @Override
-            public boolean onQueryTextSubmit(String query)
-            {
-                // Log.i(TAG, "search:1:" + query);
-
-                if ((query == null) || (query.length() == 0))
-                {
-                    try
-                    {
-                        // all messages
-                        conf_search_messages_text = null;
-                        MainActivity.conference_message_list_fragment.update_all_messages(false,
-                                                                                          PREF__messageview_paging);
-                    }
-                    catch (Exception e2)
-                    {
-                        e2.printStackTrace();
-                    }
-                }
-                else
-                {
-                    try
-                    {
-                        // all messages and search string
-                        conf_search_messages_text = query;
-                        MainActivity.conference_message_list_fragment.update_all_messages(false,
-                                                                                          PREF__messageview_paging);
-                    }
-                    catch (Exception e2)
-                    {
-                        e2.printStackTrace();
-                    }
-                }
-
-                return false;
-            }
-
-            @Override
-            public boolean onQueryTextChange(String query)
-            {
-                // Log.i(TAG, "search:2:" + query);
-
-                if ((query == null) || (query.length() == 0))
-                {
-                    try
-                    {
-                        // all messages
-                        conf_search_messages_text = null;
-                        MainActivity.conference_message_list_fragment.update_all_messages(false,
-                                                                                          PREF__messageview_paging);
-                    }
-                    catch (Exception e2)
-                    {
-                        e2.printStackTrace();
-                    }
-                }
-                else
-                {
-                    try
-                    {
-                        // all messages and search string
-                        conf_search_messages_text = query;
-                        MainActivity.conference_message_list_fragment.update_all_messages(false,
-                                                                                          PREF__messageview_paging);
-                    }
-                    catch (Exception e2)
-                    {
-                        e2.printStackTrace();
-                    }
-                }
-
-                return true;
-            }
-        });
-
         setUpEmojiPopup();
 
         final Drawable d1 = new IconicsDrawable(getBaseContext()).
                 icon(GoogleMaterial.Icon.gmd_sentiment_satisfied).
                 color(getResources().
-                        getColor(R.color.icon_colors)).
+                        getColor(R.color.colorPrimaryDark)).
                 sizeDp(80);
 
         insert_emoji.setImageDrawable(d1);
@@ -374,29 +258,22 @@ public class ConferenceMessageListActivity extends AppCompatActivity
 
         // final Drawable add_attachement_icon = new IconicsDrawable(this).icon(GoogleMaterial.Icon.gmd_attachment).color(getResources().getColor(R.color.colorPrimaryDark)).sizeDp(80);
         final Drawable send_message_icon = new IconicsDrawable(this).icon(GoogleMaterial.Icon.gmd_send).color(
-                getResources().getColor(R.color.icon_colors)).sizeDp(80);
+                getResources().getColor(R.color.colorPrimaryDark)).sizeDp(80);
 
         attachemnt_instead_of_send = true;
         ml_button_01.setImageDrawable(send_message_icon);
 
         final Drawable d2 = new IconicsDrawable(this).icon(FontAwesome.Icon.faw_phone).color(
-                getResources().getColor(R.color.icon_colors)).sizeDp(80);
+                getResources().getColor(R.color.colorPrimaryDark)).sizeDp(80);
         ml_phone_icon.setImageDrawable(d2);
 
         if (PREF__use_incognito_keyboard)
         {
-            ml_new_conf_message.setImeOptions(
-                    EditorInfo.IME_ACTION_SEND | EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING);
+            ml_new_message.setImeOptions(EditorInfo.IME_ACTION_SEND | EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING);
         }
         else
         {
-            ml_new_conf_message.setImeOptions(EditorInfo.IME_ACTION_SEND);
-        }
-
-        if (PREF__window_security)
-        {
-            // prevent screenshots and also dont show the window content in recent activity screen
-            initializeScreenshotSecurity(this);
+            ml_new_message.setImeOptions(EditorInfo.IME_ACTION_SEND);
         }
 
         set_peer_count_header();
@@ -474,7 +351,6 @@ public class ConferenceMessageListActivity extends AppCompatActivity
 
             final long conference_num = tox_conference_by_confid__wrapper(conf_id);
             long num_peers = tox_conference_peer_count(conference_num);
-            long offline_num_peers = tox_conference_offline_peer_count(conference_num);
 
             // Log.d(TAG, "set_peer_names_and_avatars:003:peer count=" + num_peers);
 
@@ -483,45 +359,16 @@ public class ConferenceMessageListActivity extends AppCompatActivity
                 long i = 0;
                 for (i = 0; i < num_peers; i++)
                 {
-                    try
+                    String peer_pubkey_temp = tox_conference_peer_get_public_key(conference_num, i);
+                    String peer_name_temp = tox_conference_peer_get_name(conference_num, i);
+                    if (peer_name_temp.equals(""))
                     {
-                        String peer_pubkey_temp = tox_conference_peer_get_public_key(conference_num, i);
-                        String peer_name_temp = tox_conference_peer_get_name(conference_num, i);
-                        if (peer_name_temp.equals(""))
-                        {
-                            peer_name_temp = null;
-                        }
-                        // Log.d(TAG, "set_peer_names_and_avatars:004:add:" + peer_name_temp);
-                        add_group_user(peer_pubkey_temp, i, peer_name_temp, false);
+                        peer_name_temp = null;
                     }
-                    catch (Exception e)
-                    {
-                    }
+                    // Log.d(TAG, "set_peer_names_and_avatars:004:add:" + peer_name_temp);
+                    add_group_user(peer_pubkey_temp, i, peer_name_temp);
                 }
             }
-
-            if (offline_num_peers > 0)
-            {
-                long i = 0;
-                for (i = 0; i < offline_num_peers; i++)
-                {
-                    try
-                    {
-                        String peer_pubkey_temp = tox_conference_offline_peer_get_public_key(conference_num, i);
-                        String peer_name_temp = tox_conference_offline_peer_get_name(conference_num, i);
-                        if (peer_name_temp.equals(""))
-                        {
-                            peer_name_temp = null;
-                        }
-                        // Log.d(TAG, "set_peer_names_and_avatars:005:add:" + peer_name_temp);
-                        add_group_user(peer_pubkey_temp, i, peer_name_temp, true);
-                    }
-                    catch (Exception e)
-                    {
-                    }
-                }
-            }
-
         }
     }
 
@@ -588,7 +435,7 @@ public class ConferenceMessageListActivity extends AppCompatActivity
                 final Drawable d1 = new IconicsDrawable(getBaseContext()).
                         icon(FontAwesome.Icon.faw_keyboard).
                         color(getResources().
-                                getColor(R.color.icon_colors)).
+                                getColor(R.color.colorPrimaryDark)).
                         sizeDp(80);
 
                 insert_emoji.setImageDrawable(d1);
@@ -599,7 +446,7 @@ public class ConferenceMessageListActivity extends AppCompatActivity
             @Override
             public void onKeyboardOpen(@Px final int keyBoardHeight)
             {
-                // Log.d(TAG, "Opened soft keyboard");
+                Log.d(TAG, "Opened soft keyboard");
             }
         }).setOnEmojiPopupDismissListener(new OnEmojiPopupDismissListener()
         {
@@ -609,7 +456,7 @@ public class ConferenceMessageListActivity extends AppCompatActivity
                 final Drawable d1 = new IconicsDrawable(getBaseContext()).
                         icon(GoogleMaterial.Icon.gmd_sentiment_satisfied).
                         color(getResources().
-                                getColor(R.color.icon_colors)).
+                                getColor(R.color.colorPrimaryDark)).
                         sizeDp(80);
 
                 insert_emoji.setImageDrawable(d1);
@@ -620,9 +467,9 @@ public class ConferenceMessageListActivity extends AppCompatActivity
             @Override
             public void onKeyboardClose()
             {
-                // Log.d(TAG, "Closed soft keyboard");
+                Log.d(TAG, "Closed soft keyboard");
             }
-        }).build(ml_new_conf_message);
+        }).build(ml_new_message);
     }
 
     String get_current_conf_id()
@@ -670,52 +517,12 @@ public class ConferenceMessageListActivity extends AppCompatActivity
             {
                 case KeyEvent.KEYCODE_ENTER:
                 case KeyEvent.KEYCODE_NUMPAD_ENTER:
-                    if (!event.isShiftPressed())
-                    {
-                        // Log.i(TAG, "dispatchKeyEvent:KEYCODE_ENTER");
-                        send_message_onclick(null);
-                        return true;
-                    }
+                    // Log.i(TAG, "dispatchKeyEvent:KEYCODE_ENTER");
+                    send_message_onclick(null);
+                    return true;
             }
         }
         return super.dispatchKeyEvent(event);
-    }
-
-    public static void add_quote_conf_message_text(final String quote_text)
-    {
-        Runnable myRunnable = new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                try
-                {
-                    if ((ml_new_conf_message.getText().toString() == null) ||
-                        (ml_new_conf_message.getText().toString().length() == 0))
-                    {
-                        ml_new_conf_message.append(TEXT_QUOTE_STRING_1 + quote_text + TEXT_QUOTE_STRING_2 + "\n");
-                    }
-                    else
-                    {
-                        String old_text = ml_new_conf_message.getText().toString();
-                        ml_new_conf_message.setText("");
-                        // need to do it this way, or else the text input cursor will not be in the correct place
-                        ml_new_conf_message.append(
-                                old_text + "\n" + TEXT_QUOTE_STRING_1 + quote_text + TEXT_QUOTE_STRING_2 + "\n");
-                    }
-                }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
-                    Log.i(TAG, "add_quote_message_text:EE01:" + e.getMessage());
-                }
-            }
-        };
-
-        if (conferences_handler_s != null)
-        {
-            conferences_handler_s.post(myRunnable);
-        }
     }
 
     synchronized public void send_message_onclick(View view)
@@ -728,8 +535,8 @@ public class ConferenceMessageListActivity extends AppCompatActivity
             if (is_conference_active(conf_id))
             {
                 // send typed message to friend
-                msg = ml_new_conf_message.getText().toString().substring(0, (int) Math.min(tox_max_message_length(),
-                                                                                           ml_new_conf_message.getText().toString().length()));
+                msg = ml_new_message.getText().toString().substring(0, (int) Math.min(tox_max_message_length(),
+                                                                                      ml_new_message.getText().toString().length()));
 
                 try
                 {
@@ -745,23 +552,18 @@ public class ConferenceMessageListActivity extends AppCompatActivity
                     m.sent_timestamp = System.currentTimeMillis();
                     m.rcvd_timestamp = System.currentTimeMillis(); // since we do not have anything better assume "now"
                     m.text = msg;
-                    m.was_synced = false;
 
                     if ((msg != null) && (!msg.equalsIgnoreCase("")))
                     {
                         int res = tox_conference_send_message(tox_conference_by_confid__wrapper(conf_id), 0, msg);
                         // Log.i(TAG, "tox_conference_send_message:result=" + res + " m=" + m);
-                        if (PREF__X_battery_saving_mode)
-                        {
-                            Log.i(TAG, "global_last_activity_for_battery_savings_ts:001:*PING*");
-                        }
                         global_last_activity_for_battery_savings_ts = System.currentTimeMillis();
 
                         if (res > -1)
                         {
                             // message was sent OK
                             insert_into_conference_message_db(m, true);
-                            ml_new_conf_message.setText("");
+                            ml_new_message.setText("");
                         }
                     }
                 }
@@ -786,14 +588,6 @@ public class ConferenceMessageListActivity extends AppCompatActivity
                 v.setBackgroundColor(Color.TRANSPARENT);
                 is_selected = false;
                 selected_conference_messages.remove(message_.id);
-                if (selected_conference_messages.size() == 1)
-                {
-                    amode_info_menu_item.setVisible(true);
-                }
-                else
-                {
-                    amode_info_menu_item.setVisible(false);
-                }
 
                 if (selected_conference_messages.isEmpty())
                 {
@@ -815,15 +609,6 @@ public class ConferenceMessageListActivity extends AppCompatActivity
                     v.setBackgroundColor(Color.GRAY);
                     is_selected = true;
                     selected_conference_messages.add(message_.id);
-
-                    if (selected_conference_messages.size() == 1)
-                    {
-                        amode_info_menu_item.setVisible(true);
-                    }
-                    else
-                    {
-                        amode_info_menu_item.setVisible(false);
-                    }
 
                     if (amode != null)
                     {
@@ -863,19 +648,9 @@ public class ConferenceMessageListActivity extends AppCompatActivity
                     {
                         amode = MainActivity.conference_message_list_activity.startSupportActionMode(
                                 new ToolbarActionMode(context));
-                        amode_info_menu_item = amode.getMenu().findItem(R.id.action_info);
                         v.setBackgroundColor(Color.GRAY);
                         ret.is_selected = true;
                         selected_conference_messages.add(message_.id);
-
-                        if (selected_conference_messages.size() == 1)
-                        {
-                            amode_info_menu_item.setVisible(true);
-                        }
-                        else
-                        {
-                            amode_info_menu_item.setVisible(false);
-                        }
 
                         if (amode != null)
                         {
@@ -1064,9 +839,9 @@ public class ConferenceMessageListActivity extends AppCompatActivity
         }
     }
 
-    synchronized void add_group_user(final String peer_pubkey, final long peernum, String name, boolean offline)
+    synchronized void add_group_user(final String peer_pubkey, final long peernum, String name)
     {
-        // Log.i(TAG, "add_group_user:peernum=" + peernum + " name=" + name + " offline=" + offline);
+        // Log.i(TAG, "add_group_user:peernum=" + peernum);
 
         try
         {
@@ -1095,10 +870,7 @@ public class ConferenceMessageListActivity extends AppCompatActivity
                 }
                 final String name3 = name2;
 
-                if (!offline)
-                {
-                    lookup_peer_listnum_pubkey.put(peer_pubkey, peernum);
-                }
+                lookup_peer_listnum_pubkey.put(peer_pubkey, peernum);
 
                 Thread t = new Thread()
                 {
@@ -1156,19 +928,13 @@ public class ConferenceMessageListActivity extends AppCompatActivity
 
                                         try
                                         {
-                                            int badge_color = R.color.md_green_700;
-                                            if (offline)
-                                            {
-                                                badge_color = R.color.md_red_700;
-                                            }
-
                                             new_item = new ConferenceCustomDrawerPeerItem(have_avatar_for_pubkey,
                                                                                           peer_pubkey).
                                                     withIdentifier(peernum).
                                                     withName(name3).
                                                     withBadge("" + peernum).withBadgeStyle(
                                                     new BadgeStyle().withTextColor(Color.WHITE).withColorRes(
-                                                            badge_color)).
+                                                            R.color.md_red_700)).
                                                     withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener()
                                                     {
                                                         @Override
@@ -1178,7 +944,6 @@ public class ConferenceMessageListActivity extends AppCompatActivity
                                                                                        ConferencePeerInfoActivity.class);
                                                             intent.putExtra("peer_pubkey", peer_pubkey);
                                                             intent.putExtra("conf_id", conf_id);
-                                                            intent.putExtra("offline", offline);
                                                             view.getContext().startActivity(intent);
                                                             return true;
                                                         }
@@ -1200,7 +965,6 @@ public class ConferenceMessageListActivity extends AppCompatActivity
                                                                                        ConferencePeerInfoActivity.class);
                                                             intent.putExtra("peer_pubkey", peer_pubkey);
                                                             intent.putExtra("conf_id", conf_id);
-                                                            intent.putExtra("offline", offline);
                                                             view.getContext().startActivity(intent);
                                                             return true;
                                                         }
@@ -1236,7 +1000,83 @@ public class ConferenceMessageListActivity extends AppCompatActivity
             }
             else
             {
-                Log.i(TAG, "add_group_user:EE999:!!please report this!!");
+                // -- UPDATE --
+                // **** THIS is never used anymore ****
+                // **** THIS is never used anymore ****
+                // **** THIS is never used anymore ****
+                // **** THIS is never used anymore ****
+                // **** THIS is never used anymore ****
+                // **** THIS is never used anymore ****
+                // Log.i(TAG, "add_group_user:UPDATE:peernum=" + peernum);
+                String name2 = "";
+                if (name != null)
+                {
+                    name2 = name;
+                }
+                else
+                {
+                    name2 = peer_pubkey.substring(peer_pubkey.length() - 5, peer_pubkey.length());
+                }
+
+                try
+                {
+                    name2 = resolve_name_for_pubkey(peer_pubkey, name2);
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+                final String name3 = name2;
+
+                lookup_peer_listnum_pubkey.put(peer_pubkey, peernum);
+
+                Thread t = new Thread()
+                {
+                    @Override
+                    public void run()
+                    {
+                        try
+                        {
+                            Runnable myRunnable = new Runnable()
+                            {
+                                @Override
+                                public void run()
+                                {
+                                    try
+                                    {
+                                        StringHolder sh = new StringHolder(name3);
+                                        // Log.i(TAG, "conference_message_drawer.addItem:1:" + name3 + ":" + peernum);
+                                        conference_message_drawer.updateName(peernum, sh);
+                                    }
+                                    catch (Exception e2)
+                                    {
+                                        e2.printStackTrace();
+                                        Log.i(TAG, "add_group_user:EE2:" + e2.getMessage());
+                                    }
+                                }
+                            };
+
+                            if (conferences_handler_s != null)
+                            {
+                                conferences_handler_s.post(myRunnable);
+                            }
+
+                        }
+                        catch (Exception e3)
+                        {
+                            e3.printStackTrace();
+                            Log.i(TAG, "add_group_user:EE3:" + e3.getMessage());
+                        }
+                    }
+                };
+                t.start();
+                t.join();
+                // **** THIS is never used anymore ****
+                // **** THIS is never used anymore ****
+                // **** THIS is never used anymore ****
+                // **** THIS is never used anymore ****
+                // **** THIS is never used anymore ****
+                // **** THIS is never used anymore ****
             }
         }
         catch (Exception e)
@@ -1256,16 +1096,13 @@ public class ConferenceMessageListActivity extends AppCompatActivity
 
     public void onActivityResult(int requestCode, int resultCode, Intent data)
     {
-        super.onActivityResult(requestCode, resultCode, data);
-
         if (requestCode == SelectFriendSingleActivity_ID)
         {
             if (resultCode == RESULT_OK)
             {
                 try
                 {
-                    int item_type = Integer.parseInt( data.getData().toString().substring(0, 1));
-                    String result_friend_pubkey = data.getData().toString().substring(2);
+                    String result_friend_pubkey = data.getData().toString();
                     if (result_friend_pubkey != null)
                     {
                         if (result_friend_pubkey.length() == TOX_PUBLIC_KEY_SIZE * 2)
@@ -1301,31 +1138,6 @@ public class ConferenceMessageListActivity extends AppCompatActivity
                     e.printStackTrace();
                 }
             }
-        }
-    }
-
-    public void scroll_to_bottom(View v)
-    {
-        try
-        {
-            MainActivity.conference_message_list_fragment.listingsView.scrollToPosition(
-                    MainActivity.conference_message_list_fragment.adapter.getItemCount() - 1);
-        }
-        catch (Exception ignored)
-        {
-        }
-
-        ConferenceMessageListFragment.is_at_bottom = true;
-
-        try
-        {
-            do_fade_anim_on_fab(MainActivity.conference_message_list_fragment.unread_messages_notice_button, false,
-                                this.getClass().getName());
-            MainActivity.conference_message_list_fragment.unread_messages_notice_button.setSupportBackgroundTintList(
-                    (ContextCompat.getColorStateList(context_s, R.color.message_list_scroll_to_bottom_fab_bg_normal)));
-        }
-        catch (Exception ignored)
-        {
         }
     }
 }

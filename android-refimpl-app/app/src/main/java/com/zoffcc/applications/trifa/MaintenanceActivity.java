@@ -19,8 +19,6 @@
 
 package com.zoffcc.applications.trifa;
 
-import android.annotation.SuppressLint;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -30,35 +28,29 @@ import android.media.MediaPlayer;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.Uri;
-import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.yariksoffice.lingver.Lingver;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.TimeUnit;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import info.guardianproject.netcipher.client.StrongBuilder;
 import info.guardianproject.netcipher.client.StrongOkHttpClientBuilder2;
-import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -67,15 +59,9 @@ import static com.zoffcc.applications.trifa.BootstrapNodeEntryDB.insert_default_
 import static com.zoffcc.applications.trifa.BootstrapNodeEntryDB.insert_default_udp_nodes_into_db;
 import static com.zoffcc.applications.trifa.HelperGeneric.delete_vfs_file;
 import static com.zoffcc.applications.trifa.HelperGeneric.import_toxsave_file_unsecure;
-import static com.zoffcc.applications.trifa.HelperGeneric.long_date_time_format_for_filename;
-import static com.zoffcc.applications.trifa.HelperGeneric.touch;
-import static com.zoffcc.applications.trifa.IOBrowser.getFilesInDir;
 import static com.zoffcc.applications.trifa.MainActivity.MAIN_DB_NAME;
 import static com.zoffcc.applications.trifa.MainActivity.MAIN_VFS_NAME;
-import static com.zoffcc.applications.trifa.MainActivity.PREF__DB_secrect_key;
 import static com.zoffcc.applications.trifa.MainActivity.PREF__orbot_enabled;
-import static com.zoffcc.applications.trifa.MainActivity.SD_CARD_ENC_CHATS_EXPORT_DIR;
-import static com.zoffcc.applications.trifa.MainActivity.SD_CARD_ENC_FILES_EXPORT_DIR;
 import static com.zoffcc.applications.trifa.MainActivity.SD_CARD_FILES_EXPORT_DIR;
 import static com.zoffcc.applications.trifa.MainActivity.SelectLanguageActivity_ID;
 import static com.zoffcc.applications.trifa.MainActivity.debug__audio_frame_played;
@@ -90,10 +76,7 @@ import static com.zoffcc.applications.trifa.MainActivity.debug__audio_play_buf_c
 import static com.zoffcc.applications.trifa.MainActivity.debug__audio_play_factor;
 import static com.zoffcc.applications.trifa.MainActivity.debug__audio_play_iter;
 import static com.zoffcc.applications.trifa.MainActivity.export_savedata_file_unsecure;
-import static com.zoffcc.applications.trifa.TRIFAGlobals.GENERIC_TOR_USERAGENT;
 import static com.zoffcc.applications.trifa.TRIFAGlobals.TOX_NODELIST_URL;
-import static com.zoffcc.applications.trifa.ToxVars.TOX_CONFERENCE_TYPE.TOX_CONFERENCE_TYPE_TEXT;
-import static com.zoffcc.applications.trifa.TrifaSetPatternActivity.filter_out_specials_from_filepath_stricter;
 import static com.zoffcc.applications.trifa.TrifaToxService.orma;
 
 public class MaintenanceActivity extends AppCompatActivity implements StrongBuilder.Callback<OkHttpClient>
@@ -110,11 +93,7 @@ public class MaintenanceActivity extends AppCompatActivity implements StrongBuil
     Button button_reset_nodelist;
     Button button_test_notification;
     Button button_test_ringtone;
-    Button button_iobrowser_start;
-    Button button_audio_roundtrip_test_start;
     Button button_export_savedata;
-    Button button_export_encrypted_files;
-    Button button_export_encrypted_chats;
     Button button_import_savedata;
 
     Boolean button_test_ringtone_start = true;
@@ -136,7 +115,6 @@ public class MaintenanceActivity extends AppCompatActivity implements StrongBuil
     //
     // ----------------------------------------------------
 
-    @SuppressLint("SetTextI18n")
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
@@ -153,51 +131,13 @@ public class MaintenanceActivity extends AppCompatActivity implements StrongBuil
         button_reset_nodelist = (Button) findViewById(R.id.button_reset_nodelist);
         button_test_notification = (Button) findViewById(R.id.button_test_notification);
         button_test_ringtone = (Button) findViewById(R.id.button_test_ringtone);
-        button_iobrowser_start = (Button) findViewById(R.id.button_iobrowser_start);
-        button_audio_roundtrip_test_start = (Button) findViewById(R.id.button_audio_roundtrip_test_start);
         button_export_savedata = (Button) findViewById(R.id.button_export_savedata);
-        button_export_encrypted_files = (Button) findViewById(R.id.button_export_encrypted_files);
-        button_export_encrypted_chats = (Button) findViewById(R.id.button_export_encrypted_chats);
         button_import_savedata = (Button) findViewById(R.id.button_import_savedata);
         text_sqlstats = (TextView) findViewById(R.id.text_sqlstats);
         debug_output = (TextView) findViewById(R.id.debug_output);
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
-        button_iobrowser_start.setOnClickListener(new View.OnClickListener()
-        {
-            @Override
-            public void onClick(View v)
-            {
-                try
-                {
-                    Intent intent = new Intent(getBaseContext(), IOBrowser.class);
-                    startActivity(intent);
-                }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
-                }
-            }
-        });
-
-        button_audio_roundtrip_test_start.setOnClickListener(new View.OnClickListener()
-        {
-            @Override
-            public void onClick(View v)
-            {
-                try
-                {
-                    Intent intent = new Intent(getBaseContext(), AudioRoundtripActivity.class);
-                    startActivity(intent);
-                }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
-                }
-            }
-        });
 
         button_set_app_language.setOnClickListener(new View.OnClickListener()
         {
@@ -268,6 +208,7 @@ public class MaintenanceActivity extends AppCompatActivity implements StrongBuil
                 }
             }
         });
+
 
         button_sql_analyze.setOnClickListener(new View.OnClickListener()
         {
@@ -368,24 +309,10 @@ public class MaintenanceActivity extends AppCompatActivity implements StrongBuil
                     else
                     {
                         Log.i(TAG, "StrongOkHttpClientBuilder:002");
-                        onConnected(new OkHttpClient.Builder().
-                                addNetworkInterceptor(new Interceptor()
-                                {
-                                    @NonNull
-                                    @Override
-                                    public Response intercept(@NonNull Chain chain) throws IOException
-                                    {
-                                        Request request = chain.request();
-                                        Request new_request = request.newBuilder().removeHeader("User-Agent").addHeader(
-                                                "User-Agent", GENERIC_TOR_USERAGENT).
-                                                build();
-                                        return chain.proceed(new_request);
-                                    }
-                                }).
-                                connectTimeout(20, TimeUnit.SECONDS).
-                                writeTimeout(20, TimeUnit.SECONDS).
-                                connectTimeout(20, TimeUnit.SECONDS).
-                                build());
+                        // StrongOkHttpClientBuilder2 bb = StrongOkHttpClientBuilder2.
+                        //        forMaxSecurity(MaintenanceActivity.this);
+                        // bb.build(MaintenanceActivity.this);
+                        onConnected(new OkHttpClient());
                         Log.i(TAG, "StrongOkHttpClientBuilder:003");
                     }
                 }
@@ -414,71 +341,6 @@ public class MaintenanceActivity extends AppCompatActivity implements StrongBuil
             }
         });
 
-        button_export_encrypted_files.setOnClickListener(new View.OnClickListener()
-        {
-            @Override
-            public void onClick(View v)
-            {
-                try
-                {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(this_context);
-                    builder.setTitle("Export Encrypted Files");
-                    builder.setMessage(
-                            "Your Encrypted received files will be exported unencrypted to this location:" + "\n\n" +
-                            MainActivity.SD_CARD_FILES_EXPORT_DIR + SD_CARD_ENC_FILES_EXPORT_DIR);
-
-                    builder.setPositiveButton("Yes, I want to export", new DialogInterface.OnClickListener()
-                    {
-                        public void onClick(DialogInterface dialog, int id)
-                        {
-                            export_encrypted_files_unsecure(this_context);
-                            return;
-                        }
-                    });
-                    builder.setNegativeButton("Cancel", null);
-
-                    AlertDialog dialog = builder.create();
-                    dialog.show();
-                }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
-                }
-            }
-        });
-
-        button_export_encrypted_chats.setOnClickListener(new View.OnClickListener()
-        {
-            @Override
-            public void onClick(View v)
-            {
-                try
-                {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(this_context);
-                    builder.setTitle("Export Encrypted Chats");
-                    builder.setMessage("Your Encrypted Chats will be exported unencrypted to this location:" + "\n\n" +
-                                       MainActivity.SD_CARD_FILES_EXPORT_DIR + SD_CARD_ENC_CHATS_EXPORT_DIR);
-
-                    builder.setPositiveButton("Yes, I want to export", new DialogInterface.OnClickListener()
-                    {
-                        public void onClick(DialogInterface dialog, int id)
-                        {
-                            export_encrypted_chats_unsecure(this_context);
-                            return;
-                        }
-                    });
-                    builder.setNegativeButton("Cancel", null);
-
-                    AlertDialog dialog = builder.create();
-                    dialog.show();
-                }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
-                }
-            }
-        });
-
         button_import_savedata.setOnClickListener(new View.OnClickListener()
         {
             @Override
@@ -496,22 +358,7 @@ public class MaintenanceActivity extends AppCompatActivity implements StrongBuil
                                               {
                                                   public void onClick(DialogInterface dialog, int id)
                                                   {
-
-                                                      final Thread import_thread = new Thread()
-                                                      {
-                                                          @Override
-                                                          public void run()
-                                                          {
-                                                              try
-                                                              {
-                                                                  import_toxsave_file_unsecure(this_context);
-                                                              }
-                                                              catch (Exception ignored)
-                                                              {
-                                                              }
-                                                          }
-                                                      };
-                                                      import_thread.start();
+                                                      import_toxsave_file_unsecure(this_context);
                                                       return;
                                                   }
                                               });
@@ -629,137 +476,70 @@ public class MaintenanceActivity extends AppCompatActivity implements StrongBuil
             }
         });
 
-        String debug__sqlite_version = "unknown";
-        try
-        {
-            Cursor cursor = orma.getConnection().rawQuery("SELECT sqlite_version()");
-            cursor.moveToFirst();
-            debug__sqlite_version = cursor.getString(0);
-            cursor.close();
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-
-        String debug__cipher_version = "unknown";
-        try
-        {
-            Cursor cursor = orma.getConnection().rawQuery("PRAGMA cipher_version");
-            cursor.moveToFirst();
-            debug__cipher_version = cursor.getString(0);
-            cursor.close();
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-
-        String debug__cipher_provider = "unknown";
-        try
-        {
-            Cursor cursor = orma.getConnection().rawQuery("PRAGMA cipher_provider");
-            cursor.moveToFirst();
-            debug__cipher_provider = cursor.getString(0);
-            cursor.close();
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-
-        String debug__cipher_provider_version = "unknown";
-        try
-        {
-            Cursor cursor = orma.getConnection().rawQuery("PRAGMA cipher_provider_version");
-            cursor.moveToFirst();
-            debug__cipher_provider_version = cursor.getString(0);
-            cursor.close();
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-
         debug_output_clear();
-        debug_output_append("cipher_version=" + debug__cipher_version);
-        debug_output_append("sqlite_version=" + debug__sqlite_version);
-        debug_output_append("cipher_provider=" + debug__cipher_provider);
-        debug_output_append("cipher_provider_version=" + debug__cipher_provider_version);
-        debug_output_append("audio_pkt_incoming=" + debug__audio_pkt_incoming);
-        debug_output_append("audio_frame_played=" + debug__audio_frame_played);
-        debug_output_append("audio_play_buf_count_max=" + debug__audio_play_buf_count_max);
-        debug_output_append("audio_play_buf01=" + debug__audio_play_buf01);
-        debug_output_append("audio_play_buf02=" + debug__audio_play_buf02);
-        debug_output_append("audio_play_buf03=" + debug__audio_play_buf03);
-        debug_output_append("audio_play_buf04=" + debug__audio_play_buf04);
-        debug_output_append("audio_play_buf05=" + debug__audio_play_buf05);
-        debug_output_append("audio_play_buf06=" + debug__audio_play_buf06);
-        debug_output_append("audio_play_factor=" + debug__audio_play_factor);
-        debug_output_append("audio_play_iter=" + debug__audio_play_iter);
+        debug_output_append("debug__audio_pkt_incoming=" + debug__audio_pkt_incoming);
+        debug_output_append("debug__audio_frame_played=" + debug__audio_frame_played);
+        debug_output_append("debug__audio_play_buf_count_max=" + debug__audio_play_buf_count_max);
+        debug_output_append("debug__audio_play_buf01=" + debug__audio_play_buf01);
+        debug_output_append("debug__audio_play_buf02=" + debug__audio_play_buf02);
+        debug_output_append("debug__audio_play_buf03=" + debug__audio_play_buf03);
+        debug_output_append("debug__audio_play_buf04=" + debug__audio_play_buf04);
+        debug_output_append("debug__audio_play_buf05=" + debug__audio_play_buf05);
+        debug_output_append("debug__audio_play_buf06=" + debug__audio_play_buf06);
+        debug_output_append("debug__audio_play_factor=" + debug__audio_play_factor);
+        debug_output_append("debug__audio_play_iter=" + debug__audio_play_iter);
 
         String num_msgs = "*ERROR*";
         try
+
         {
             num_msgs = "" + orma.selectFromMessage().count();
         }
         catch (Exception e)
+
         {
             e.printStackTrace();
         }
 
         String num_confmsgs = "*ERROR*";
         try
+
         {
             num_confmsgs = "" + orma.selectFromConferenceMessage().count();
         }
         catch (Exception e)
-        {
-            e.printStackTrace();
-        }
 
-        String num_groupmsgs = "*ERROR*";
-        try
-        {
-            num_groupmsgs = "" + orma.selectFromGroupMessage().count();
-        }
-        catch (Exception e)
         {
             e.printStackTrace();
         }
 
         String num_dbfriends = "*ERROR*";
         try
+
         {
             num_dbfriends = "" + orma.selectFromFriendList().count();
         }
         catch (Exception e)
+
         {
             e.printStackTrace();
         }
 
         String num_dbconfs = "*ERROR*";
         try
+
         {
             num_dbconfs = "" + orma.selectFromConferenceDB().count();
         }
         catch (Exception e)
-        {
-            e.printStackTrace();
-        }
 
-        String num_dbgroups = "*ERROR*";
-        try
-        {
-            num_dbgroups = "" + orma.selectFromGroupDB().count();
-        }
-        catch (Exception e)
         {
             e.printStackTrace();
         }
 
         String vfs_size = "*ERROR*";
         try
+
         {
             String dbFile = getDir("vfs", MODE_PRIVATE).getAbsolutePath() + "/" + MAIN_VFS_NAME;
             File database_dir = new File(new File(dbFile).getParent());
@@ -767,25 +547,28 @@ public class MaintenanceActivity extends AppCompatActivity implements StrongBuil
 
         }
         catch (Exception e)
+
         {
             e.printStackTrace();
         }
 
         String dbmain_size = "*ERROR*";
         try
+
         {
             String dbs_path = getDir("dbs", MODE_PRIVATE).getAbsolutePath() + "/" + MAIN_DB_NAME;
             File database_dir = new File(new File(dbs_path).getParent());
             dbmain_size = files_and_sizes_in_dir(database_dir);
         }
         catch (Exception e)
+
         {
             e.printStackTrace();
         }
 
-        text_sqlstats.setText("Database:\n" + "Messages: " + num_msgs + "\nConference Messages: " + num_confmsgs +
-                              "\nGroup Messages: " + num_groupmsgs + "\nFriends: " + num_dbfriends + "\nConferences: " +
-                              num_dbconfs + "\nGroups: " + num_dbgroups + "\n\n" + vfs_size + "\n\n" + dbmain_size);
+        text_sqlstats.setText(
+                "Database:\n" + "Messages: " + num_msgs + "\nConference Messages: " + num_confmsgs + "\nFriends: " +
+                num_dbfriends + "\nConferences: " + num_dbconfs + "\n\n" + vfs_size + "\n\n" + dbmain_size);
 
         maint_handler_s = maint_handler;
     }
@@ -793,7 +576,7 @@ public class MaintenanceActivity extends AppCompatActivity implements StrongBuil
     Handler maint_handler = new Handler()
     {
         @Override
-        public void handleMessage(android.os.Message msg)
+        public void handleMessage(Message msg)
         {
             super.handleMessage(msg);
             int id = msg.what;
@@ -805,7 +588,6 @@ public class MaintenanceActivity extends AppCompatActivity implements StrongBuil
         debug_output.setText("");
     }
 
-    @SuppressLint("SetTextI18n")
     void debug_output_append(String log_line)
     {
         debug_output.setText(debug_output.getText().toString() + log_line + "\n");
@@ -824,10 +606,7 @@ public class MaintenanceActivity extends AppCompatActivity implements StrongBuil
                 try
                 {
                     Log.i(TAG, "onConnected:002");
-                    Request request = new Request.
-                            Builder().
-                            url(TOX_NODELIST_URL).
-                            header("User-Agent", GENERIC_TOR_USERAGENT).
+                    Request request = new Request.Builder().url(TOX_NODELIST_URL).
                             build();
 
                     Response response = okHttpClient.
@@ -869,26 +648,13 @@ public class MaintenanceActivity extends AppCompatActivity implements StrongBuil
                                     BootstrapNodeEntryDB bn2 = new BootstrapNodeEntryDB();
                                     bn2.ip = nl_entry.getIpv4();
                                     bn2.port = nl_entry.getPort();
-                                    bn2.key_hex = nl_entry.getPublicKey().toUpperCase();
+                                    bn2.key_hex = nl_entry.getPublicKey();
                                     bn2.udp_node = true;
                                     bn2.num = num_udp;
-                                    if ((bn2.ip != null) && (!bn2.ip.equalsIgnoreCase("none")) && (bn2.port > 0) && (bn2.key_hex != null))
+                                    if ((bn2.ip != null) && (bn2.port > 0) && (bn2.key_hex != null))
                                     {
                                         orma.insertIntoBootstrapNodeEntryDB(bn2);
                                         Log.i(TAG, "add UDP node:" + bn2);
-                                        num_udp++;
-                                    }
-
-                                    BootstrapNodeEntryDB bn2_ip6 = new BootstrapNodeEntryDB();
-                                    bn2_ip6.ip = nl_entry.getIpv6();
-                                    bn2_ip6.port = nl_entry.getPort();
-                                    bn2_ip6.key_hex = nl_entry.getPublicKey().toUpperCase();
-                                    bn2_ip6.udp_node = true;
-                                    bn2_ip6.num = num_udp;
-                                    if ((!bn2_ip6.ip.equalsIgnoreCase("-")) && (bn2_ip6.port > 0) && (bn2_ip6.key_hex != null))
-                                    {
-                                        orma.insertIntoBootstrapNodeEntryDB(bn2_ip6);
-                                        Log.i(TAG, "add UDP ipv6 node:" + bn2_ip6);
                                         num_udp++;
                                     }
                                 }
@@ -909,43 +675,15 @@ public class MaintenanceActivity extends AppCompatActivity implements StrongBuil
                                     {
                                         BootstrapNodeEntryDB bn2 = new BootstrapNodeEntryDB();
                                         bn2.ip = nl_entry.getIpv4();
-                                        int tcp_ports_count = nl_entry.getTcpPorts().size();
                                         bn2.port = nl_entry.getTcpPorts().get(k);
-                                        bn2.key_hex = nl_entry.getPublicKey().toUpperCase();
+                                        bn2.key_hex = nl_entry.getPublicKey();
                                         bn2.udp_node = false;
-                                        if ((bn2.ip != null) && (!bn2.ip.equalsIgnoreCase("none")) && (bn2.port > 0) && (bn2.key_hex != null))
+                                        bn2.num = num_tcp;
+                                        if ((bn2.ip != null) && (bn2.port > 0) && (bn2.key_hex != null))
                                         {
-                                            for (int p=0;p<tcp_ports_count;p++)
-                                            {
-                                                bn2.num = num_tcp;
-                                                bn2.port = nl_entry.getTcpPorts().get(p);
-                                                orma.insertIntoBootstrapNodeEntryDB(bn2);
-                                                Log.i(TAG, "add tcp node:" + bn2);
-                                                num_tcp++;
-                                            }
-                                        }
-
-                                        BootstrapNodeEntryDB bn2_ip6 = new BootstrapNodeEntryDB();
-                                        bn2_ip6.ip = nl_entry.getIpv6();
-                                        int tcp_ports_count_ip6 = nl_entry.getTcpPorts().size();
-                                        bn2_ip6.key_hex = nl_entry.getPublicKey().toUpperCase();
-                                        bn2_ip6.udp_node = false;
-                                        bn2_ip6.num = num_tcp;
-                                        if ((!bn2_ip6.ip.equalsIgnoreCase("-")) && (tcp_ports_count_ip6 > 0) && (bn2_ip6.key_hex != null))
-                                        {
-                                            for (int p=0;p<tcp_ports_count_ip6;p++)
-                                            {
-                                                BootstrapNodeEntryDB bn2_ip6_ = new BootstrapNodeEntryDB();
-                                                bn2_ip6_.ip = nl_entry.getIpv6();
-                                                bn2_ip6_.port = nl_entry.getTcpPorts().get(p);
-                                                bn2_ip6_.key_hex = nl_entry.getPublicKey().toUpperCase();
-                                                bn2_ip6_.udp_node = false;
-                                                bn2_ip6_.num = num_tcp;
-
-                                                orma.insertIntoBootstrapNodeEntryDB(bn2_ip6_);
-                                                Log.i(TAG, "add tcp ipv6 node:" + bn2_ip6_);
-                                                num_tcp++;
-                                            }
+                                            orma.insertIntoBootstrapNodeEntryDB(bn2);
+                                            Log.i(TAG, "add tcp node:" + bn2);
+                                            num_tcp++;
                                         }
                                     }
                                     catch (Exception e)
@@ -1073,306 +811,6 @@ public class MaintenanceActivity extends AppCompatActivity implements StrongBuil
         dialog.show();
     }
 
-    public static void export_encrypted_chats_unsecure(final Context context)
-    {
-        try
-        {
-            new export_enc_chats_async_task(context).execute();
-        }
-        catch (Exception e)
-        {
-        }
-    }
-
-    public static void export_encrypted_files_unsecure(final Context context)
-    {
-        try
-        {
-            new export_enc_files_async_task(context).execute();
-        }
-        catch (Exception e)
-        {
-        }
-    }
-
-    private static class export_enc_chats_async_task extends AsyncTask<Void, Void, Void>
-    {
-        private ProgressDialog dialog;
-        private final Context c;
-
-        public export_enc_chats_async_task(Context c)
-        {
-            this.c = c;
-            dialog = new ProgressDialog(c);
-        }
-
-        @Override
-        protected void onPreExecute()
-        {
-            dialog.setMessage("exporting ...");
-            dialog.setCancelable(false);
-            dialog.show();
-        }
-
-        @Override
-        protected Void doInBackground(Void... args)
-        {
-            String export_dir_string = MainActivity.SD_CARD_FILES_EXPORT_DIR + SD_CARD_ENC_CHATS_EXPORT_DIR;
-
-            try
-            {
-                File export_dir = new File(export_dir_string);
-                export_dir.mkdirs();
-
-                List<FriendList> fl = orma.selectFromFriendList().
-                        is_relayEq(false).
-                        orderByTox_public_key_stringAsc().
-                        toList();
-                // Log.i(TAG, "export_friends:" + fl.size());
-                for (FriendList f : fl)
-                {
-                    String dirpath = export_dir_string + "/" + f.tox_public_key_string + "_" +
-                                     filter_out_specials_from_filepath_stricter(f.name);
-                    // Log.i(TAG, "friend:xxx:F:" + dirpath);
-                    new File(dirpath).mkdirs();
-
-                    List<Message> ml = orma.selectFromMessage().
-                            tox_friendpubkeyEq(f.tox_public_key_string).
-                            toList();
-                    // Log.i(TAG, "export_messages_count:" + ml.size() + " friend=" + f.tox_public_key_string);
-                    long counter = 0;
-                    for (Message m : ml)
-                    {
-                        counter++;
-                        // Log.i(TAG, "export_message:" + m.text + " friend=" + f.tox_public_key_string);
-
-                        long ts = 0;
-                        String msg_type_state = "";
-                        if (m.direction == 0)
-                        {
-                            // incoming msg
-                            ts = m.rcvd_timestamp;
-                            msg_type_state = "I_";
-                        }
-                        else
-                        {
-                            // outgoing msg
-                            ts = m.sent_timestamp;
-                            if (m.read)
-                            {
-                                msg_type_state = "OR";
-                            }
-                            else
-                            {
-                                msg_type_state = "OU";
-                            }
-                        }
-                        String msg_path = dirpath + "/" + long_date_time_format_for_filename(ts) + "_" +
-                                          String.format("%03d", counter) + "_" + msg_type_state + ".txt";
-                        // Log.i(TAG, "friend:xxx:F:M:" + msg_path);
-
-                        try
-                        {
-                            PrintWriter pr = new PrintWriter(msg_path, "UTF-8");
-                            pr.print(m.text);
-                            pr.close();
-                        }
-                        catch (Exception e)
-                        {
-                        }
-                    }
-                }
-
-                List<ConferenceDB> cl = orma.selectFromConferenceDB().
-                        kindEq(TOX_CONFERENCE_TYPE_TEXT.value).
-                        orderByConference_identifierAsc().
-                        toList();
-                long counter = 0;
-                for (ConferenceDB conf : cl)
-                {
-                    counter++;
-                    String dirpath = export_dir_string + "/" + conf.conference_identifier + "_" +
-                                     filter_out_specials_from_filepath_stricter(conf.name);
-                    // Log.i(TAG, "friend:xxx:C:" + dirpath);
-                    new File(dirpath).mkdirs();
-
-                    List<ConferenceMessage> cml = orma.selectFromConferenceMessage().
-                            conference_identifierEq(conf.conference_identifier).toList();
-                    for (ConferenceMessage cm : cml)
-                    {
-                        long ts = 0;
-                        String msg_type_state = "";
-                        if (cm.direction == 0)
-                        {
-                            // incoming msg
-                            ts = cm.rcvd_timestamp;
-                            msg_type_state = "I_";
-                        }
-                        else
-                        {
-                            // outgoing msg
-                            ts = cm.sent_timestamp;
-                            if (cm.read)
-                            {
-                                msg_type_state = "OR";
-                            }
-                            else
-                            {
-                                msg_type_state = "OU";
-                            }
-                        }
-                        String msg_path = dirpath + "/" + long_date_time_format_for_filename(ts) + "_" +
-                                          String.format("%03d", counter) + "_" + msg_type_state + "_" +
-                                          cm.tox_peerpubkey + "_" +
-                                          filter_out_specials_from_filepath_stricter(cm.tox_peername) + ".txt";
-                        // Log.i(TAG, "friend:xxx:C:M:" + msg_path);
-
-                        try
-                        {
-                            PrintWriter pr = new PrintWriter(msg_path, "UTF-8");
-                            pr.print(cm.text);
-                            pr.close();
-                        }
-                        catch (Exception e)
-                        {
-                        }
-                    }
-                }
-
-                // now dump the DB to file in SQL format
-                final String dbs_path = c.getDir("dbs", MODE_PRIVATE).getAbsolutePath() + "/" + MAIN_DB_NAME;
-                net.sqlcipher.database.SQLiteDatabase database = net.sqlcipher.database.SQLiteDatabase.openDatabase(
-                        dbs_path, PREF__DB_secrect_key, null, net.sqlcipher.database.SQLiteDatabase.OPEN_READWRITE);
-
-                final String sql_export_filename = export_dir_string + "/" + "export.sqlite";
-
-                try
-                {
-                    new File(sql_export_filename).delete();
-                }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
-                }
-
-                touch(new File(sql_export_filename));
-                String sql = "ATTACH DATABASE '" + sql_export_filename + "' AS export KEY '';";
-                net.sqlcipher.Cursor cursor = database.rawQuery(sql, null);
-
-                Log.i(TAG, "export:chats:sqlfile:" + cursor.getColumnNames() + " " + cursor.getColumnCount() + " " +
-                           cursor.getCount());
-                cursor = database.rawQuery("SELECT sqlcipher_export('export');", null);
-                Log.i(TAG, "export:chats:sqlfile:" + cursor.getColumnNames() + " " + cursor.getColumnCount() + " " +
-                           cursor.getCount());
-                cursor = database.rawQuery("DETACH DATABASE export;", null);
-                Log.i(TAG, "export:chats:sqlfile:" + cursor.getColumnNames() + " " + cursor.getColumnCount() + " " +
-                           cursor.getCount());
-                database.close();
-            }
-            catch (Exception e)
-            {
-                Log.i(TAG, "export:chats:EE01:" + e.getMessage());
-                e.printStackTrace();
-            }
-
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void result)
-        {
-            if (dialog.isShowing())
-            {
-                dialog.dismiss();
-            }
-
-            Toast.makeText(c, "export ready", Toast.LENGTH_LONG).show();
-        }
-    }
-
-    private static class export_enc_files_async_task extends AsyncTask<Void, Void, Void>
-    {
-        private ProgressDialog dialog;
-        private final Context c;
-
-        public export_enc_files_async_task(Context c)
-        {
-            this.c = c;
-            dialog = new ProgressDialog(c);
-        }
-
-        @Override
-        protected void onPreExecute()
-        {
-            dialog.setMessage("exporting ...");
-            dialog.setCancelable(false);
-            dialog.show();
-        }
-
-        @Override
-        protected Void doInBackground(Void... args)
-        {
-            String export_dir_string = MainActivity.SD_CARD_FILES_EXPORT_DIR + SD_CARD_ENC_FILES_EXPORT_DIR;
-
-            try
-            {
-                File export_dir = new File(export_dir_string);
-                export_dir.mkdirs();
-                List<IOBrowser.dir_item> l = getFilesInDir("/datadir/files/");
-
-                for (IOBrowser.dir_item friend_dir : l)
-                {
-                    if (friend_dir.get_is_dir())
-                    {
-                        File export_friend_dir = new File(export_dir_string + "/" + friend_dir.get_path());
-                        // Log.i(TAG, "export:mkdir1:" + export_friend_dir);
-                        export_friend_dir.mkdirs();
-                        List<IOBrowser.dir_item> f = getFilesInDir("/datadir/files/" + friend_dir.get_path());
-
-                        for (IOBrowser.dir_item friend_file : f)
-                        {
-                            if (!friend_file.get_is_dir())
-                            {
-                                // Log.i(TAG, "export:mkdir2:" + export_friend_dir);
-                                export_friend_dir.mkdirs();
-
-                                //Log.i(TAG, "export:2:" +
-                                //           ("/datadir/files/" + friend_dir.get_path() + "/" + friend_file.get_path()) +
-                                //           " --> " + export_friend_dir + "/" + friend_file.get_path());
-
-                                try
-                                {
-                                    HelperGeneric.export_vfs_file_to_real_file(
-                                            "/datadir/files/" + friend_dir.get_path() + "/", friend_file.get_path(),
-                                            export_friend_dir + "/", friend_file.get_path());
-                                }
-                                catch (Exception e)
-                                {
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-            }
-
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void result)
-        {
-            if (dialog.isShowing())
-            {
-                dialog.dismiss();
-            }
-
-            Toast.makeText(c, "export ready", Toast.LENGTH_LONG).show();
-        }
-    }
-
     public static String files_and_sizes_in_dir(File directory)
     {
         StringBuilder ret = new StringBuilder("Files:");
@@ -1435,8 +873,6 @@ public class MaintenanceActivity extends AppCompatActivity implements StrongBuil
 
     public void onActivityResult(int requestCode, int resultCode, Intent data)
     {
-        super.onActivityResult(requestCode, resultCode, data);
-
         if (requestCode == SelectLanguageActivity_ID)
         {
             if (resultCode == RESULT_OK)
@@ -1476,10 +912,7 @@ public class MaintenanceActivity extends AppCompatActivity implements StrongBuil
                             //}
                             else if (result_lang.compareTo("es") == 0)
                             {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-                                {
-                                    Lingver.getInstance().setLocale(this, Locale.forLanguageTag(result_lang));
-                                }
+                                Lingver.getInstance().setLocale(this, Locale.forLanguageTag(result_lang));
                             }
                             //else if (result_lang.compareTo("fa") == 0)
                             //{
@@ -1488,59 +921,35 @@ public class MaintenanceActivity extends AppCompatActivity implements StrongBuil
                             //}
                             else if (result_lang.compareTo("fr") == 0)
                             {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-                                {
-                                    Lingver.getInstance().setLocale(this, Locale.forLanguageTag(result_lang));
-                                }
+                                Lingver.getInstance().setLocale(this, Locale.forLanguageTag(result_lang));
                             }
                             else if (result_lang.compareTo("hi") == 0)
                             {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-                                {
-                                    Lingver.getInstance().setLocale(this, Locale.forLanguageTag(result_lang));
-                                }
+                                Lingver.getInstance().setLocale(this, Locale.forLanguageTag(result_lang));
                             }
                             else if (result_lang.compareTo("hu") == 0)
                             {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-                                {
-                                    Lingver.getInstance().setLocale(this, Locale.forLanguageTag(result_lang));
-                                }
+                                Lingver.getInstance().setLocale(this, Locale.forLanguageTag(result_lang));
                             }
                             else if (result_lang.compareTo("it") == 0)
                             {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-                                {
-                                    Lingver.getInstance().setLocale(this, Locale.forLanguageTag(result_lang));
-                                }
+                                Lingver.getInstance().setLocale(this, Locale.forLanguageTag(result_lang));
                             }
                             else if (result_lang.compareTo("kn") == 0)
                             {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-                                {
-                                    Lingver.getInstance().setLocale(this, Locale.forLanguageTag(result_lang));
-                                }
+                                Lingver.getInstance().setLocale(this, Locale.forLanguageTag(result_lang));
                             }
                             else if (result_lang.compareTo("tr") == 0)
                             {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-                                {
-                                    Lingver.getInstance().setLocale(this, Locale.forLanguageTag(result_lang));
-                                }
+                                Lingver.getInstance().setLocale(this, Locale.forLanguageTag(result_lang));
                             }
                             else if (result_lang.compareTo("sv") == 0)
                             {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-                                {
-                                    Lingver.getInstance().setLocale(this, Locale.forLanguageTag(result_lang));
-                                }
+                                Lingver.getInstance().setLocale(this, Locale.forLanguageTag(result_lang));
                             }
                             else if (result_lang.compareTo("ru") == 0)
                             {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-                                {
-                                    Lingver.getInstance().setLocale(this, Locale.forLanguageTag(result_lang));
-                                }
+                                Lingver.getInstance().setLocale(this, Locale.forLanguageTag(result_lang));
                             }
                             // ------------------
                             // ------------------

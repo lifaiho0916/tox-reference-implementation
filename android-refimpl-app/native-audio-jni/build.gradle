@@ -1,56 +1,23 @@
-
-plugins {
-    id 'com.android.library'
-}
-
-repositories {
-    google()
-    mavenCentral()
-    maven {
-        url "https://jitpack.io"
-    }
-}
+apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion = 32
-    buildToolsVersion = '30.0.3'
-    compileOptions.encoding = 'UTF-8'
-
-    packagingOptions {
-        exclude 'LICENSE.txt'
-        //
-        doNotStrip "*/armeabi-v7a/*.so"
-        doNotStrip "*/arm64-v8a/*.so"
-    }
+    compileSdkVersion = 27
+    buildToolsVersion = '29.0.2'
 
     defaultConfig {
-        minSdkVersion 19
-        //noinspection ExpiredTargetSdkVersion
-        targetSdkVersion 29
+        minSdkVersion 14
+        targetSdkVersion 26
 
         externalNativeBuild {
             cmake {
+                // arguments "-G\"BorlandMakeFiles\""
                 cFlags "-g -O3"
                 cppFlags "-g -O3"
-            }
-
-            ndk {
-                // Specifies the ABI configurations of your native
-                // libraries Gradle should build and package with your APK.
-                abiFilters 'x86', 'x86_64', 'armeabi-v7a', 'arm64-v8a'
+                // targets 'native-audio-jni'
+                // armeabi-v7a, arm64-v8a, x86, x86_64
+                // * does not work * // abiFilters "armeabi-v7a", "x86"
             }
         }
-        versionCode 10000
-        versionName '1.0.0'
-    }
-
-    lintOptions {
-        checkReleaseBuilds false
-        abortOnError false
-    }
-
-    android {
-        ndkVersion "23.2.8568313"
     }
 
     externalNativeBuild {
@@ -59,5 +26,5 @@ android {
             path 'src/main/cpp/CMakeLists.txt'
         }
     }
-    ndkVersion "23.2.8568313"
 }
+

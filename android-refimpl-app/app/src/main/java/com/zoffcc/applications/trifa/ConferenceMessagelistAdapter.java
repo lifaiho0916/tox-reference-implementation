@@ -20,6 +20,7 @@
 package com.zoffcc.applications.trifa;
 
 import android.content.Context;
+import androidx.recyclerview.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -30,13 +31,7 @@ import com.l4digital.fastscroll.FastScroller;
 import java.util.Iterator;
 import java.util.List;
 
-import androidx.recyclerview.widget.RecyclerView;
-
 import static com.zoffcc.applications.trifa.HelperGeneric.only_date_time_format;
-import static com.zoffcc.applications.trifa.MainActivity.PREF__compact_chatlist;
-import static com.zoffcc.applications.trifa.TRIFAGlobals.MESSAGE_PAGING_SHOW_NEWER_HASH;
-import static com.zoffcc.applications.trifa.TRIFAGlobals.MESSAGE_PAGING_SHOW_OLDER_HASH;
-import static com.zoffcc.applications.trifa.TRIFAGlobals.TRIFA_SYSTEM_MESSAGE_PEER_PUBKEY;
 
 public class ConferenceMessagelistAdapter extends RecyclerView.Adapter implements FastScroller.SectionIndexer
 {
@@ -69,25 +64,9 @@ public class ConferenceMessagelistAdapter extends RecyclerView.Adapter implement
 
         switch (viewType)
         {
-            case Message_model.PAGING_NEWER:
-                view = LayoutInflater.from(parent.getContext()).inflate(R.layout.message_list_paging_newer, parent,
-                                                                        false);
-                return new ConferenceMessageListHolder_paging(view, this.context);
-            case Message_model.PAGING_OLDER:
-                view = LayoutInflater.from(parent.getContext()).inflate(R.layout.message_list_paging_older, parent,
-                                                                        false);
-                return new ConferenceMessageListHolder_paging(view, this.context);
             case Message_model.TEXT_INCOMING_NOT_READ:
-                if (PREF__compact_chatlist)
-                {
-                    view = LayoutInflater.from(parent.getContext()).inflate(R.layout.message_list_entry_read_compact,
-                                                                            parent, false);
-                }
-                else
-                {
-                    view = LayoutInflater.from(parent.getContext()).inflate(R.layout.message_list_entry_read, parent,
-                                                                            false);
-                }
+                view = LayoutInflater.from(parent.getContext()).inflate(R.layout.message_list_entry_read, parent,
+                                                                        false);
                 return new ConferenceMessageListHolder_text_incoming_not_read(view, this.context);
             case Message_model.TEXT_INCOMING_HAVE_READ:
                 // ******** NOT USED ******** //
@@ -98,8 +77,7 @@ public class ConferenceMessagelistAdapter extends RecyclerView.Adapter implement
                 // ******** NOT USED ******** //
                 // ******** NOT USED ******** //
                 // ******** NOT USED ******** //
-                //return new ConferenceMessageListHolder_text_incoming_read(view, this.context);
-                return new ConferenceMessageListHolder_error(view, this.context);
+                return new ConferenceMessageListHolder_text_incoming_read(view, this.context);
 
             case Message_model.TEXT_OUTGOING_NOT_READ:
                 // ******** NOT USED ******** //
@@ -110,19 +88,10 @@ public class ConferenceMessagelistAdapter extends RecyclerView.Adapter implement
                 // ******** NOT USED ******** //
                 // ******** NOT USED ******** //
                 // ******** NOT USED ******** //
-                // return new ConferenceMessageListHolder_text_outgoing_not_read(view, this.context);
-                return new ConferenceMessageListHolder_error(view, this.context);
+                return new ConferenceMessageListHolder_text_outgoing_not_read(view, this.context);
             case Message_model.TEXT_OUTGOING_HAVE_READ:
-                if (PREF__compact_chatlist)
-                {
-                    view = LayoutInflater.from(parent.getContext()).inflate(
-                            R.layout.message_list_self_entry_read_compact, parent, false);
-                }
-                else
-                {
-                    view = LayoutInflater.from(parent.getContext()).inflate(R.layout.message_list_self_entry_read,
-                                                                            parent, false);
-                }
+                view = LayoutInflater.from(parent.getContext()).inflate(R.layout.message_list_self_entry_read, parent,
+                                                                        false);
                 return new ConferenceMessageListHolder_text_outgoing_read(view, this.context);
 
         }
@@ -138,23 +107,7 @@ public class ConferenceMessagelistAdapter extends RecyclerView.Adapter implement
 
         {
             // TEXT -------------
-            if ((my_msg.tox_peerpubkey.equals(TRIFA_SYSTEM_MESSAGE_PEER_PUBKEY)) && (
-
-                    ((my_msg.message_id_tox.equals(MESSAGE_PAGING_SHOW_OLDER_HASH)) ||
-                     (my_msg.message_id_tox.equals(MESSAGE_PAGING_SHOW_NEWER_HASH)))
-
-            ))
-            {
-                if (my_msg.message_id_tox.equals(MESSAGE_PAGING_SHOW_OLDER_HASH))
-                {
-                    return Message_model.PAGING_OLDER;
-                }
-                else
-                {
-                    return Message_model.PAGING_NEWER;
-                }
-            }
-            else if (my_msg.direction == 0)
+            if (my_msg.direction == 0)
             {
                 // msg to me
                 if (my_msg.read)
@@ -205,12 +158,6 @@ public class ConferenceMessagelistAdapter extends RecyclerView.Adapter implement
 
             switch (getItemViewType(position))
             {
-                case Message_model.PAGING_NEWER:
-                    ((ConferenceMessageListHolder_paging) holder).bindMessageList(m2);
-                    break;
-                case Message_model.PAGING_OLDER:
-                    ((ConferenceMessageListHolder_paging) holder).bindMessageList(m2);
-                    break;
                 case Message_model.TEXT_INCOMING_NOT_READ:
                     ((ConferenceMessageListHolder_text_incoming_not_read) holder).bindMessageList(m2);
                     break;
@@ -218,7 +165,7 @@ public class ConferenceMessagelistAdapter extends RecyclerView.Adapter implement
                     // NOT USED ----------
                     // NOT USED ----------
                     // NOT USED ----------
-                    //((ConferenceMessageListHolder_text_incoming_read) holder).bindMessageList(m2);
+                    ((ConferenceMessageListHolder_text_incoming_read) holder).bindMessageList(m2);
                     // NOT USED ----------
                     // NOT USED ----------
                     // NOT USED ----------
@@ -227,7 +174,7 @@ public class ConferenceMessagelistAdapter extends RecyclerView.Adapter implement
                     // ******** NOT USED ******** //
                     // ******** NOT USED ******** //
                     // ******** NOT USED ******** //
-                    //((ConferenceMessageListHolder_text_outgoing_not_read) holder).bindMessageList(m2);
+                    ((ConferenceMessageListHolder_text_outgoing_not_read) holder).bindMessageList(m2);
                     break;
                 case Message_model.TEXT_OUTGOING_HAVE_READ:
                     ((ConferenceMessageListHolder_text_outgoing_read) holder).bindMessageList(m2);
@@ -410,82 +357,6 @@ public class ConferenceMessagelistAdapter extends RecyclerView.Adapter implement
         {
             e.printStackTrace();
             return " ";
-        }
-    }
-
-    public ConferenceMessage get_item(int position)
-    {
-        try
-        {
-            return messagelistitems.get(position);
-        }
-        catch (Exception e)
-        {
-            return null;
-        }
-    }
-
-    public String getPrvPeer(int position)
-    {
-        try
-        {
-            ConferenceMessage getSectionText_message_object2 = messagelistitems.get(position);
-
-            if (getSectionText_message_object2.direction == 0)
-            {
-                // incoming msg
-                return ("I_" + getSectionText_message_object2.tox_peerpubkey);
-            }
-            else
-            {
-                // outgoing msg
-                return ("O_" + getSectionText_message_object2.tox_peerpubkey);
-            }
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    public static class DateTime_in_out
-    {
-        long timestamp;
-        int direction;
-        String pk;
-    }
-
-    public DateTime_in_out getDateTime(int position)
-    {
-        DateTime_in_out ret = new DateTime_in_out();
-
-        try
-        {
-            // direction: 0 -> msg received, 1 -> msg sent
-            ConferenceMessage getSectionText_message_object2 = messagelistitems.get(position);
-
-            if (getSectionText_message_object2.direction == 0)
-            {
-                // incoming msg
-                ret.direction = 0;
-                ret.timestamp = getSectionText_message_object2.sent_timestamp;
-                ret.pk = getSectionText_message_object2.tox_peerpubkey;
-                return ret;
-            }
-            else
-            {
-                // outgoing msg
-                ret.direction = 1;
-                ret.timestamp = getSectionText_message_object2.sent_timestamp;
-                ret.pk = getSectionText_message_object2.tox_peerpubkey;
-                return ret;
-            }
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-            return null;
         }
     }
 }

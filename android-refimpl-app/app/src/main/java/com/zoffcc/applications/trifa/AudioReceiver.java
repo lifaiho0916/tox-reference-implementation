@@ -221,11 +221,6 @@ public class AudioReceiver extends Thread
             debug__audio_play_buf05 = NativeAudio.n_buf_size_in_bytes;
         }
 
-        if (NativeAudio.n_buf_size_in_bytes< 3840)
-        {
-            NativeAudio.n_buf_size_in_bytes = 3840;
-        }
-
         if (PREF__X_audio_play_buffer_custom > 0)
         {
             if (PREF__X_audio_play_buffer_custom < 500000)
@@ -246,8 +241,6 @@ public class AudioReceiver extends Thread
         {
             NativeAudio.n_audio_buffer[i] = ByteBuffer.allocateDirect(NativeAudio.n_buf_size_in_bytes);
             NativeAudio.n_bytes_in_buffer[i] = 0;
-            Log.i(TAG, "audio_play:read:init:n_audio_buffer:bufnum=" + i + " size in bytes=" +
-                       NativeAudio.n_buf_size_in_bytes);
             NativeAudio.set_JNI_audio_buffer(NativeAudio.n_audio_buffer[i], NativeAudio.n_buf_size_in_bytes, i);
         }
 

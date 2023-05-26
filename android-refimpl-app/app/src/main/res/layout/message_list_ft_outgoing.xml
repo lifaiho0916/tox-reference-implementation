@@ -25,7 +25,6 @@
 
 
             <LinearLayout
-                android:id="@+id/ft_outgoing_rounded_bg"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="20dp"
@@ -48,7 +47,6 @@
                         android:layout_weight="1"
                         android:paddingLeft="10dp"
                         android:text="..."
-                        android:textColor="#8A000000"
                         android:textColorLink="@color/textblock_link_color_for_blue"
                         android:textSize="20sp"
                         app:emojiSize="@dimen/emoji_size_in_textview"/>
@@ -85,7 +83,7 @@
                         app:progress_max="100"
                         app:progress_reached_bar_height="15dp"
                         app:progress_reached_color="@color/md_green_800"
-                        app:progress_text_color="@color/md_always_black_1000"
+                        app:progress_text_color="@color/md_black_1000"
                         app:progress_text_offset="5dp"
                         app:progress_text_size="12sp"
                         app:progress_text_visibility="visible"
@@ -260,7 +258,7 @@
             android:layout_marginLeft="10dp"
             android:layout_marginRight="10dp"
             android:layout_weight="100"
-            android:background="#FFFFFF"/>
+            android:background="@color/md_white_1000"/>
 
         <TextView
             android:id="@+id/message_text_date_string"
@@ -277,7 +275,7 @@
             android:paddingStart="@dimen/padding_small"
             android:paddingTop="2dp"
             android:text="2017-05-14"
-            android:textColor="@color/message_text_date_string_color"
+            android:textColor="@color/md_white_1000"
             android:textSize="@dimen/text_small"/>
 
         <ImageView
@@ -287,7 +285,7 @@
             android:layout_marginLeft="10dp"
             android:layout_marginRight="10dp"
             android:layout_weight="100"
-            android:background="#FFFFFF"/>
+            android:background="@color/md_white_1000"/>
 
     </LinearLayout>
 

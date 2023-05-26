@@ -19,20 +19,24 @@
 
 package com.zoffcc.applications.trifa;
 
-import android.annotation.SuppressLint;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Build;
+import androidx.core.content.FileProvider;
+import androidx.recyclerview.widget.RecyclerView;
 import android.util.Log;
-import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.MimeTypeMap;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Priority;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
@@ -46,28 +50,15 @@ import com.mikepenz.iconics.IconicsDrawable;
 
 import java.net.URLConnection;
 
-import androidx.core.content.ContextCompat;
-import androidx.documentfile.provider.DocumentFile;
-import androidx.recyclerview.widget.RecyclerView;
-
-import static com.zoffcc.applications.trifa.HelperFiletransfer.open_local_outgoing_file;
+import static android.webkit.MimeTypeMap.getFileExtensionFromUrl;
+import static com.zoffcc.applications.trifa.MainActivity.VFS_ENCRYPT;
 import static com.zoffcc.applications.trifa.HelperGeneric.dp2px;
 import static com.zoffcc.applications.trifa.HelperGeneric.get_vfs_image_filename_own_avatar;
 import static com.zoffcc.applications.trifa.HelperGeneric.long_date_time_format;
-import static com.zoffcc.applications.trifa.MainActivity.PREF__compact_chatlist;
-import static com.zoffcc.applications.trifa.MainActivity.PREF__global_font_size;
-import static com.zoffcc.applications.trifa.MainActivity.VFS_ENCRYPT;
 import static com.zoffcc.applications.trifa.MainActivity.selected_messages;
 import static com.zoffcc.applications.trifa.MessageListActivity.onClick_message_helper;
 import static com.zoffcc.applications.trifa.MessageListActivity.onLongClick_message_helper;
-import static com.zoffcc.applications.trifa.TRIFAGlobals.MESSAGE_TEXT_SIZE;
-import static com.zoffcc.applications.trifa.ToxVars.TOX_FILE_KIND.TOX_FILE_KIND_FTV2;
 
-/*
- *
- * HINT: this is used when an outgoing FT is canceled or has finished
- *
- */
 public class MessageListHolder_file_outgoing_state_cancel extends RecyclerView.ViewHolder implements View.OnClickListener, View.OnLongClickListener
 {
     private static final String TAG = "trifa.MessageListHolder";
@@ -86,7 +77,6 @@ public class MessageListHolder_file_outgoing_state_cancel extends RecyclerView.V
     de.hdodenhof.circleimageview.CircleImageView img_avatar;
     TextView date_time;
     ViewGroup layout_message_container;
-    ViewGroup rounded_bg_container;
     boolean is_selected = false;
     TextView message_text_date_string;
     ViewGroup message_text_date;
@@ -105,7 +95,6 @@ public class MessageListHolder_file_outgoing_state_cancel extends RecyclerView.V
         ft_preview_container = (ViewGroup) itemView.findViewById(R.id.ft_preview_container);
         ft_buttons_container = (ViewGroup) itemView.findViewById(R.id.ft_buttons_container);
         ft_preview_image = (ImageButton) itemView.findViewById(R.id.ft_preview_image);
-        rounded_bg_container = (ViewGroup) itemView.findViewById(R.id.ft_outgoing_rounded_bg);
         textView = (EmojiTextViewLinks) itemView.findViewById(R.id.m_text);
         imageView = (ImageView) itemView.findViewById(R.id.m_icon);
         img_avatar = (de.hdodenhof.circleimageview.CircleImageView) itemView.findViewById(R.id.img_avatar);
@@ -115,7 +104,6 @@ public class MessageListHolder_file_outgoing_state_cancel extends RecyclerView.V
         message_text_date = (ViewGroup) itemView.findViewById(R.id.message_text_date);
     }
 
-    @SuppressLint("ClickableViewAccessibility")
     public void bindMessageList(Message m)
     {
         // Log.i(TAG, "bindMessageList");
@@ -128,37 +116,6 @@ public class MessageListHolder_file_outgoing_state_cancel extends RecyclerView.V
         }
 
         message_ = m;
-
-        int drawable_id = R.drawable.rounded_blue_bg_with_border;
-        try
-        {
-            if (m.filetransfer_kind == TOX_FILE_KIND_FTV2.value)
-            {
-                drawable_id = R.drawable.rounded_blue_bg;
-            }
-
-            final int sdk = android.os.Build.VERSION.SDK_INT;
-            if (sdk < android.os.Build.VERSION_CODES.JELLY_BEAN)
-            {
-                rounded_bg_container.setBackgroundDrawable(ContextCompat.getDrawable(context, drawable_id));
-            }
-            else
-            {
-                rounded_bg_container.setBackground(ContextCompat.getDrawable(context, drawable_id));
-            }
-        }
-        catch (Exception e)
-        {
-            final int sdk = android.os.Build.VERSION.SDK_INT;
-            if (sdk < android.os.Build.VERSION_CODES.JELLY_BEAN)
-            {
-                rounded_bg_container.setBackgroundDrawable(ContextCompat.getDrawable(context, drawable_id));
-            }
-            else
-            {
-                rounded_bg_container.setBackground(ContextCompat.getDrawable(context, drawable_id));
-            }
-        }
 
         is_selected = false;
         if (selected_messages.isEmpty())
@@ -192,17 +149,14 @@ public class MessageListHolder_file_outgoing_state_cancel extends RecyclerView.V
                 {
                     if (my_position < 1)
                     {
-                        message_text_date_string.setText(
-                                MainActivity.message_list_fragment.adapter.getDateHeaderText(my_position));
+                        message_text_date_string.setText(MainActivity.message_list_fragment.adapter.getDateHeaderText(my_position));
                         message_text_date.setVisibility(View.VISIBLE);
                     }
                     else
                     {
-                        if (!MainActivity.message_list_fragment.adapter.getDateHeaderText(my_position).equals(
-                                MainActivity.message_list_fragment.adapter.getDateHeaderText(my_position - 1)))
+                        if (!MainActivity.message_list_fragment.adapter.getDateHeaderText(my_position).equals(MainActivity.message_list_fragment.adapter.getDateHeaderText(my_position - 1)))
                         {
-                            message_text_date_string.setText(
-                                    MainActivity.message_list_fragment.adapter.getDateHeaderText(my_position));
+                            message_text_date_string.setText(MainActivity.message_list_fragment.adapter.getDateHeaderText(my_position));
                             message_text_date.setVisibility(View.VISIBLE);
                         }
                     }
@@ -222,18 +176,12 @@ public class MessageListHolder_file_outgoing_state_cancel extends RecyclerView.V
 
         date_time.setText(long_date_time_format(m.sent_timestamp));
 
-        textView.setVisibility(View.VISIBLE);
-        imageView.setVisibility(View.VISIBLE);
-
         final Message message = m;
 
-        textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, MESSAGE_TEXT_SIZE[PREF__global_font_size]);
-
-        if (message.filedb_id == -1) // transfer was canceled somewhere
+        if (message.filedb_id == -1) // tranfser was canceled somewhere
         {
 
-            textView.addAutoLinkMode(AutoLinkMode.MODE_URL, AutoLinkMode.MODE_EMAIL, AutoLinkMode.MODE_HASHTAG,
-                                     AutoLinkMode.MODE_MENTION);
+            textView.addAutoLinkMode(AutoLinkMode.MODE_URL, AutoLinkMode.MODE_EMAIL, AutoLinkMode.MODE_HASHTAG, AutoLinkMode.MODE_MENTION);
             textView.setAutoLinkText("" + message.text + "\n *canceled*");
 
             ft_preview_image.setImageDrawable(null);
@@ -252,20 +200,8 @@ public class MessageListHolder_file_outgoing_state_cancel extends RecyclerView.V
             boolean is_image = false;
             try
             {
-                String mimeType = null;
-                if (message.storage_frame_work)
-                {
-                    Uri uri = Uri.parse(message.filename_fullpath);
-                    DocumentFile documentFile = DocumentFile.fromSingleUri(context, uri);
-                    String fileName = documentFile.getName();
-                    mimeType = URLConnection.guessContentTypeFromName(fileName.toLowerCase());
-                }
-                else
-                {
-                    mimeType = URLConnection.guessContentTypeFromName(message.filename_fullpath.toLowerCase());
-                }
-
-                if (mimeType.startsWith("image/"))
+                String mimeType = URLConnection.guessContentTypeFromName(message.filename_fullpath.toLowerCase());
+                if (mimeType.startsWith("image"))
                 {
                     is_image = true;
                 }
@@ -279,17 +215,6 @@ public class MessageListHolder_file_outgoing_state_cancel extends RecyclerView.V
             {
                 ft_preview_image.setImageResource(R.drawable.round_loading_animation);
 
-                if (PREF__compact_chatlist)
-                {
-                    textView.setVisibility(View.GONE);
-                    imageView.setVisibility(View.GONE);
-                }
-                else
-                {
-                    textView.setVisibility(View.VISIBLE);
-                    textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, MESSAGE_TEXT_SIZE[PREF__global_font_size]);
-                }
-
                 ft_preview_image.setOnTouchListener(new View.OnTouchListener()
                 {
                     @Override
@@ -299,23 +224,9 @@ public class MessageListHolder_file_outgoing_state_cancel extends RecyclerView.V
                         {
                             try
                             {
-                                if (message.storage_frame_work)
-                                {
-                                    Uri uri = Uri.parse(message.filename_fullpath);
-                                    DocumentFile documentFile = DocumentFile.fromSingleUri(context, uri);
-                                    String fileName = documentFile.getName();
-
-                                    Intent intent = new Intent(v.getContext(), ImageviewerActivity_SD.class);
-                                    intent.putExtra("image_filename", uri.toString());
-                                    intent.putExtra("storage_frame_work", "1");
-                                    v.getContext().startActivity(intent);
-                                }
-                                else
-                                {
-                                    Intent intent = new Intent(v.getContext(), ImageviewerActivity_SD.class);
-                                    intent.putExtra("image_filename", message.filename_fullpath);
-                                    v.getContext().startActivity(intent);
-                                }
+                                Intent intent = new Intent(v.getContext(), ImageviewerActivity_SD.class);
+                                intent.putExtra("image_filename", message.filename_fullpath);
+                                v.getContext().startActivity(intent);
                             }
                             catch (Exception e)
                             {
@@ -330,49 +241,26 @@ public class MessageListHolder_file_outgoing_state_cancel extends RecyclerView.V
                     }
                 });
 
-                if (message.storage_frame_work)
-                {
-                    try
-                    {
-                        final RequestOptions glide_options = new RequestOptions().fitCenter().optionalTransform(
-                                new RoundedCorners((int) dp2px(20)));
 
-                        GlideApp.
-                                with(context).
-                                load(Uri.parse(message.filename_fullpath)).
-                                diskCacheStrategy(DiskCacheStrategy.RESOURCE).
-                                skipMemoryCache(false).
-                                priority(Priority.LOW).
-                                placeholder(R.drawable.round_loading_animation).
-                                into(ft_preview_image);
-                    }
-                    catch (Exception e)
-                    {
-                        e.printStackTrace();
-                    }
-                }
-                else
+                java.io.File f2 = new java.io.File(message.filename_fullpath);
+                try
                 {
-                    java.io.File f2 = new java.io.File(message.filename_fullpath);
-                    try
-                    {
-                        final RequestOptions glide_options = new RequestOptions().fitCenter().optionalTransform(
-                                new RoundedCorners((int) dp2px(20)));
+                    final RequestOptions glide_options = new RequestOptions().fitCenter().optionalTransform(new RoundedCorners((int) dp2px(20)));
 
-                        GlideApp.
-                                with(context).
-                                load(f2).
-                                diskCacheStrategy(DiskCacheStrategy.RESOURCE).
-                                skipMemoryCache(false).
-                                priority(Priority.LOW).
-                                placeholder(R.drawable.round_loading_animation).
-                                into(ft_preview_image);
-                    }
-                    catch (Exception e)
-                    {
-                        e.printStackTrace();
-                    }
+                    GlideApp.
+                            with(context).
+                            load(f2).
+                            diskCacheStrategy(DiskCacheStrategy.RESOURCE).
+                            skipMemoryCache(false).
+                            priority(Priority.LOW).
+                            placeholder(R.drawable.round_loading_animation).
+                            into(ft_preview_image);
                 }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+
             }
             else
             {
@@ -381,17 +269,8 @@ public class MessageListHolder_file_outgoing_state_cancel extends RecyclerView.V
                         backgroundColor(Color.TRANSPARENT).
                         color(Color.parseColor("#AA000000")).sizeDp(50);
 
-                // ft_preview_image.setImageDrawable(d3);
-                GlideApp.
-                        with(context).
-                        load(d3).
-                        diskCacheStrategy(DiskCacheStrategy.NONE).
-                        skipMemoryCache(false).
-                        priority(Priority.LOW).
-                        placeholder(R.drawable.round_loading_animation).
-                        into(ft_preview_image);
+                ft_preview_image.setImageDrawable(d3);
 
-                // open non-image files -----------------
                 ft_preview_image.setOnTouchListener(new View.OnTouchListener()
                 {
                     @Override
@@ -399,13 +278,37 @@ public class MessageListHolder_file_outgoing_state_cancel extends RecyclerView.V
                     {
                         if (event.getAction() == MotionEvent.ACTION_UP)
                         {
-                            if (!message.storage_frame_work)
+                            try
                             {
-                                open_local_outgoing_file(message.filename_fullpath, v.getContext());
+                                MimeTypeMap myMime = MimeTypeMap.getSingleton();
+                                Intent newIntent = new Intent(Intent.ACTION_VIEW);
+                                String mimeType = myMime.getMimeTypeFromExtension(getFileExtensionFromUrl(message.filename_fullpath));
+
+                                Uri file_uri = null;
+                                if (Build.VERSION.SDK_INT > 23)
+                                {
+                                    file_uri = FileProvider.getUriForFile(context, BuildConfig.APPLICATION_ID + ".provider", new java.io.File(message.filename_fullpath));
+                                    newIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                                }
+                                else
+                                {
+                                    file_uri = Uri.fromFile(new java.io.File(message.filename_fullpath));
+                                }
+
+                                newIntent.setDataAndType(file_uri, mimeType);
+                                newIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                try
+                                {
+                                    context.startActivity(newIntent);
+                                }
+                                catch (ActivityNotFoundException e)
+                                {
+                                    Toast.makeText(context, "Can not handle this file", Toast.LENGTH_LONG).show();
+                                }
                             }
-                            else
+                            catch (Exception e)
                             {
-                                // TODO: write open outgoing local file with Storage Framework (which is wonky at best)
+                                e.printStackTrace();
                             }
                         }
                         return true;
@@ -419,8 +322,47 @@ public class MessageListHolder_file_outgoing_state_cancel extends RecyclerView.V
             ft_buttons_container.setVisibility(View.GONE);
         }
 
-        HelperGeneric.fill_own_avatar_icon(context, img_avatar);
-        HelperGeneric.set_avatar_img_height_in_chat(img_avatar);
+
+        final Drawable d_lock = new IconicsDrawable(context).icon(FontAwesome.Icon.faw_lock).color(context.getResources().getColor(R.color.colorPrimaryDark)).sizeDp(50);
+        img_avatar.setImageDrawable(d_lock);
+
+        try
+        {
+            if (VFS_ENCRYPT)
+            {
+                String fname = get_vfs_image_filename_own_avatar();
+
+                info.guardianproject.iocipher.File f1 = null;
+                try
+                {
+                    f1 = new info.guardianproject.iocipher.File(fname);
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+
+                if ((f1 != null) && (fname != null))
+                {
+                    if (f1.length() > 0)
+                    {
+                        final RequestOptions glide_options = new RequestOptions().fitCenter();
+                        GlideApp.
+                                with(context).
+                                load(f1).
+                                diskCacheStrategy(DiskCacheStrategy.RESOURCE).
+                                skipMemoryCache(false).
+                                apply(glide_options).
+                                into(img_avatar);
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+
     }
 
     @Override
@@ -437,6 +379,7 @@ public class MessageListHolder_file_outgoing_state_cancel extends RecyclerView.V
     }
 
 
+
     private View.OnClickListener onclick_listener = new View.OnClickListener()
     {
         @Override
@@ -451,8 +394,7 @@ public class MessageListHolder_file_outgoing_state_cancel extends RecyclerView.V
         @Override
         public boolean onLongClick(final View v)
         {
-            MessageListActivity.long_click_message_return res = onLongClick_message_helper(context, v, is_selected,
-                                                                                           message_);
+            MessageListActivity.long_click_message_return res = onLongClick_message_helper(context, v, is_selected, message_);
             is_selected = res.is_selected;
             return res.ret_value;
         }

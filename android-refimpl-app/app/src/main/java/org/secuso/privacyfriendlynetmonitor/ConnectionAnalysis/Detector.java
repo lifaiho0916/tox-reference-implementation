@@ -65,7 +65,6 @@ import java.util.List;
 
 public class Detector
 {
-    private static final String TAG = "trifa.Detector";
 
     //Members
     //Get commands for shell readin

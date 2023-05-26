@@ -28,7 +28,6 @@ import android.graphics.drawable.Drawable;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -43,7 +42,6 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.recyclerview.widget.RecyclerView;
 
-import static com.zoffcc.applications.trifa.CombinedFriendsAndConferences.COMBINED_IS_FRIEND;
 import static com.zoffcc.applications.trifa.HelperConference.add_conference_wrapper;
 import static com.zoffcc.applications.trifa.HelperFriend.delete_friend;
 import static com.zoffcc.applications.trifa.HelperFriend.delete_friend_all_files;
@@ -51,21 +49,16 @@ import static com.zoffcc.applications.trifa.HelperFriend.delete_friend_all_filet
 import static com.zoffcc.applications.trifa.HelperFriend.delete_friend_all_messages;
 import static com.zoffcc.applications.trifa.HelperFriend.main_get_friend;
 import static com.zoffcc.applications.trifa.HelperFriend.tox_friend_by_public_key__wrapper;
-import static com.zoffcc.applications.trifa.HelperGeneric.dp2px;
-import static com.zoffcc.applications.trifa.HelperGeneric.is_nightmode_active;
 import static com.zoffcc.applications.trifa.HelperGeneric.long_date_time_format;
 import static com.zoffcc.applications.trifa.HelperGeneric.update_savedata_file_wrapper;
-import static com.zoffcc.applications.trifa.HelperRelay.get_pushurl_for_friend;
+import static com.zoffcc.applications.trifa.HelperRelay.get_own_relay_pubkey;
 import static com.zoffcc.applications.trifa.HelperRelay.get_relay_for_friend;
 import static com.zoffcc.applications.trifa.HelperRelay.have_own_relay;
 import static com.zoffcc.applications.trifa.HelperRelay.invite_to_all_conferences_own_relay;
-import static com.zoffcc.applications.trifa.HelperRelay.invite_to_all_groups_own_relay;
-import static com.zoffcc.applications.trifa.HelperRelay.invite_to_conference_own_relay;
 import static com.zoffcc.applications.trifa.HelperRelay.send_all_friend_pubkeys_to_relay;
 import static com.zoffcc.applications.trifa.HelperRelay.send_relay_pubkey_to_all_friends;
 import static com.zoffcc.applications.trifa.HelperRelay.set_friend_as_own_relay_in_db;
 import static com.zoffcc.applications.trifa.Identicon.create_avatar_identicon_for_pubkey;
-import static com.zoffcc.applications.trifa.MainActivity.PREF__show_friendnumber_on_friendlist;
 import static com.zoffcc.applications.trifa.MainActivity.VFS_ENCRYPT;
 import static com.zoffcc.applications.trifa.MainActivity.cache_confid_confnum;
 import static com.zoffcc.applications.trifa.MainActivity.cache_fnum_pubkey;
@@ -82,7 +75,6 @@ import static com.zoffcc.applications.trifa.TRIFAGlobals.FL_NOTIFICATION_ICON_SI
 import static com.zoffcc.applications.trifa.TRIFAGlobals.FRIEND_AVATAR_FILENAME;
 import static com.zoffcc.applications.trifa.TRIFAGlobals.LAST_ONLINE_TIMSTAMP_ONLINE_NOW;
 import static com.zoffcc.applications.trifa.TRIFAGlobals.LAST_ONLINE_TIMSTAMP_ONLINE_OFFLINE;
-import static com.zoffcc.applications.trifa.TRIFAGlobals.ONE_HOUR_IN_MS;
 import static com.zoffcc.applications.trifa.TRIFAGlobals.VFS_FILE_DIR;
 import static com.zoffcc.applications.trifa.TRIFAGlobals.VFS_PREFIX;
 import static com.zoffcc.applications.trifa.ToxVars.TOX_CONFERENCE_TYPE.TOX_CONFERENCE_TYPE_AV;
@@ -107,22 +99,19 @@ public class FriendListHolder extends RecyclerView.ViewHolder implements View.On
     private ImageView f_notification;
     private ImageView f_relay_icon;
     private TextView f_last_online_timestamp;
-    private ViewGroup friend_line_container;
-    static ProgressDialog friend_progressDialog = null;
+    static ProgressDialog progressDialog = null;
 
     synchronized static void remove_progress_dialog()
     {
         try
         {
-            if (friend_progressDialog != null)
+            if (progressDialog != null)
             {
-                if (FriendListHolder.friend_progressDialog.isShowing())
+                if (FriendListHolder.progressDialog.isShowing())
                 {
-                    friend_progressDialog.dismiss();
+                    progressDialog.dismiss();
                 }
             }
-
-            friend_progressDialog = null;
         }
         catch (Exception e)
         {
@@ -147,8 +136,6 @@ public class FriendListHolder extends RecyclerView.ViewHolder implements View.On
         f_relay_icon = (ImageView) itemView.findViewById(R.id.f_relay_icon);
         f_notification = (ImageView) itemView.findViewById(R.id.f_notification);
         f_last_online_timestamp = (TextView) itemView.findViewById(R.id.f_last_online_timestamp);
-
-        friend_line_container = (ViewGroup) itemView.findViewById(R.id.friend_line_container);
     }
 
     public void bindFriendList(FriendList fl)
@@ -167,37 +154,18 @@ public class FriendListHolder extends RecyclerView.ViewHolder implements View.On
         itemView.setOnClickListener(this);
         itemView.setOnLongClickListener(this);
 
-        friend_line_container.setBackground(null);
-        if (fl.last_online_timestamp == LAST_ONLINE_TIMSTAMP_ONLINE_OFFLINE)
-        {
-            // friend_line_container.setBackgroundResource(R.drawable.friend_list_neveronline_round_bg);
-            friend_line_container.setBackgroundColor(context.getResources().getColor(R.color.md_amber_300));
-        }
-        else
-        {
-            if (fl.added_timestamp > (System.currentTimeMillis() - ONE_HOUR_IN_MS))
-            {
-                friend_line_container.setBackgroundColor(context.getResources().getColor(R.color.md_amber_700));
-            }
-            else
-            {
-                // friend_line_container.setBackgroundResource(R.drawable.friend_list_round_bg);
-                friend_line_container.setBackgroundColor(Color.TRANSPARENT);
-            }
-        }
-
         // Log.i(TAG, "lot=" + fl.last_online_timestamp + " -> " + LAST_ONLINE_TIMSTAMP_ONLINE_NOW);
-        if (fl.last_online_timestamp_real == LAST_ONLINE_TIMSTAMP_ONLINE_NOW)
+        if (fl.last_online_timestamp == LAST_ONLINE_TIMSTAMP_ONLINE_NOW)
         {
             f_last_online_timestamp.setText("now");
         }
-        else if (fl.last_online_timestamp_real == LAST_ONLINE_TIMSTAMP_ONLINE_OFFLINE)
+        else if (fl.last_online_timestamp == LAST_ONLINE_TIMSTAMP_ONLINE_OFFLINE)
         {
             f_last_online_timestamp.setText("never");
         }
-        else if (fl.last_online_timestamp_real > LAST_ONLINE_TIMSTAMP_ONLINE_OFFLINE)
+        else if (fl.last_online_timestamp > LAST_ONLINE_TIMSTAMP_ONLINE_OFFLINE)
         {
-            f_last_online_timestamp.setText("" + long_date_time_format(fl.last_online_timestamp_real));
+            f_last_online_timestamp.setText("" + long_date_time_format(fl.last_online_timestamp));
         }
         else
         {
@@ -209,7 +177,7 @@ public class FriendListHolder extends RecyclerView.ViewHolder implements View.On
             final Drawable d_notification = new IconicsDrawable(context).
                     icon(GoogleMaterial.Icon.gmd_notifications_off).
                     color(context.getResources().
-                            getColor(R.color.icon_colors)).
+                            getColor(R.color.colorPrimaryDark)).
                     alpha(FL_NOTIFICATION_ICON_ALPHA_NOT_SELECTED).sizeDp(FL_NOTIFICATION_ICON_SIZE_DP_NOT_SELECTED);
             f_notification.setImageDrawable(d_notification);
             f_notification.setOnClickListener(this);
@@ -219,7 +187,7 @@ public class FriendListHolder extends RecyclerView.ViewHolder implements View.On
             final Drawable d_notification = new IconicsDrawable(context).
                     icon(GoogleMaterial.Icon.gmd_notifications_active).
                     color(context.getResources().
-                            getColor(R.color.icon_colors)).
+                            getColor(R.color.colorPrimaryDark)).
                     alpha(FL_NOTIFICATION_ICON_ALPHA_SELECTED).sizeDp(FL_NOTIFICATION_ICON_SIZE_DP_SELECTED);
             f_notification.setImageDrawable(d_notification);
             f_notification.setOnClickListener(this);
@@ -229,21 +197,14 @@ public class FriendListHolder extends RecyclerView.ViewHolder implements View.On
                 icon(FontAwesome.Icon.faw_lock).color(context.getResources().
                 getColor(R.color.colorPrimaryDark)).sizeDp(80);
 
-        String name_prefix = "";
-
-        if (PREF__show_friendnumber_on_friendlist)
-        {
-            name_prefix = "" + tox_friend_by_public_key__wrapper(fl.tox_public_key_string) + " ";
-        }
-
-        textView.setText(name_prefix + fl.name);
+        textView.setText(fl.name);
         try
         {
             if (fl.alias_name != null)
             {
                 if (fl.alias_name.length() > 0)
                 {
-                    textView.setText(name_prefix + fl.alias_name);
+                    textView.setText(fl.alias_name);
                 }
             }
         }
@@ -253,13 +214,6 @@ public class FriendListHolder extends RecyclerView.ViewHolder implements View.On
         }
 
         statusText.setText(fl.status_message);
-
-        /*
-        statusText.setText("ft:s:" + tox_friend_by_public_key__wrapper(fl.tox_public_key_string) + " " +
-                           tox_file_sending_active(tox_friend_by_public_key__wrapper(fl.tox_public_key_string)) + "/" +
-                           tox_file_receiving_active(tox_friend_by_public_key__wrapper(fl.tox_public_key_string)) +
-                           " " + fl.status_message);
-         */
 
         avatar.setImageDrawable(d_lock);
 
@@ -317,7 +271,7 @@ public class FriendListHolder extends RecyclerView.ViewHolder implements View.On
                 if (need_create_identicon)
                 {
                     // no avatar icon? create and use Identicon ------------
-                    // Log.i(TAG, "indenticon:002");
+                    Log.i(TAG, "indenticon:002");
 
                     create_avatar_identicon_for_pubkey(fl.tox_public_key_string);
 
@@ -414,10 +368,13 @@ public class FriendListHolder extends RecyclerView.ViewHolder implements View.On
 
         String relay_ = get_relay_for_friend(fl.tox_public_key_string);
 
-        if (relay_ != null) // friend HAS a relay
+        // Log.d(TAG, "001:relay=" + relay_);
+        if (relay_ != null)
         {
-            FriendList relay_fl = main_get_friend(tox_friend_by_public_key__wrapper(relay_));
+            long fnum_ = tox_friend_by_public_key__wrapper(relay_);
 
+            FriendList relay_fl = main_get_friend(tox_friend_by_public_key__wrapper(relay_));
+            // Log.d(TAG, "002 relay_fl=" + relay_fl + " fnum=" + fnum_);
             if (relay_fl != null)
             {
                 if (fl.TOX_CONNECTION_real == 0)
@@ -428,8 +385,9 @@ public class FriendListHolder extends RecyclerView.ViewHolder implements View.On
                 {
                     f_status_icon.setImageResource(R.drawable.circle_green);
                 }
+                // Log.d(TAG, "003 relay_fl=" + relay_fl);
 
-                if (relay_fl.TOX_CONNECTION_real == 0)
+                if (fl.TOX_CONNECTION == 0)
                 {
                     f_relay_icon.setImageResource(R.drawable.circle_red);
                 }
@@ -446,15 +404,6 @@ public class FriendListHolder extends RecyclerView.ViewHolder implements View.On
         {
             // Log.d(TAG, "004");
 
-            String get_pushurl_for_friend = get_pushurl_for_friend(fl.tox_public_key_string);
-
-            if ((get_pushurl_for_friend != null) && (get_pushurl_for_friend.length() > "https:".length()))
-            {
-                // friend has push support
-                f_relay_icon.setImageResource(R.drawable.circle_orange);
-                f_relay_icon.setVisibility(View.VISIBLE);
-            }
-
             if (fl.TOX_CONNECTION == 0)
             {
                 f_status_icon.setImageResource(R.drawable.circle_red);
@@ -463,7 +412,9 @@ public class FriendListHolder extends RecyclerView.ViewHolder implements View.On
             {
                 f_status_icon.setImageResource(R.drawable.circle_green);
             }
+
         }
+
 
         if (fl.TOX_USER_STATUS == 0)
         {
@@ -486,41 +437,11 @@ public class FriendListHolder extends RecyclerView.ViewHolder implements View.On
             }
             else if (fl.TOX_CONNECTION_real == TOX_CONNECTION_TCP.value)
             {
-                if (is_nightmode_active(context))
-                {
-                    avatar.setBorderColor(Color.parseColor("#A8FFCE00"));
-                }
-                else
-                {
-                    avatar.setBorderColor(Color.parseColor("#FFCE00"));
-                }
+                avatar.setBorderColor(Color.parseColor("#FFCE00"));
             }
             else // UDP
             {
-                if (is_nightmode_active(context))
-                {
-                    avatar.setBorderColor(Color.parseColor("#A804B431"));
-                }
-                else
-                {
-                    avatar.setBorderColor(Color.parseColor("#04B431"));
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-
-        try
-        {
-            if (is_nightmode_active(context))
-            {
-                avatar.setBorderWidth((int) dp2px(4));
-            }
-            else
-            {
-                avatar.setBorderWidth((int) dp2px(4));
+                avatar.setBorderColor(Color.parseColor("#04B431"));
             }
         }
         catch (Exception e)
@@ -534,9 +455,9 @@ public class FriendListHolder extends RecyclerView.ViewHolder implements View.On
                     fl.tox_public_key_string).and().is_newEq(true).count();
             if (new_messages_count > 0)
             {
-                if (new_messages_count > 99)
+                if (new_messages_count > 300)
                 {
-                    unread_count.setText("+"); //("∞");
+                    unread_count.setText("+");
                 }
                 else
                 {
@@ -561,85 +482,6 @@ public class FriendListHolder extends RecyclerView.ViewHolder implements View.On
 
     }
 
-
-    public void friend_toggle_notification_silent()
-    {
-        if (!this.friendlist.notification_silent)
-        {
-            this.friendlist.notification_silent = true;
-            orma.updateFriendList().tox_public_key_stringEq(this.friendlist.tox_public_key_string).
-                    notification_silent(this.friendlist.notification_silent).execute();
-
-            final Drawable d_notification = new IconicsDrawable(context).
-                    icon(GoogleMaterial.Icon.gmd_notifications_off).
-                    color(context.getResources().
-                            getColor(R.color.icon_colors)).
-                    alpha(FL_NOTIFICATION_ICON_ALPHA_NOT_SELECTED).sizeDp(FL_NOTIFICATION_ICON_SIZE_DP_NOT_SELECTED);
-            f_notification.setImageDrawable(d_notification);
-
-            try
-            {
-                if (friend_list_fragment != null)
-                {
-                    // TODO: dirty hack, make better
-                    final boolean sorted_reload = true;
-                    if (!sorted_reload)
-                    {
-                        CombinedFriendsAndConferences cc = new CombinedFriendsAndConferences();
-                        cc.is_friend = COMBINED_IS_FRIEND;
-                        cc.friend_item = this.friendlist;
-                        friend_list_fragment.modify_friend(cc, cc.is_friend);
-                    }
-                    else
-                    {
-                        friend_list_fragment.add_all_friends_clear(0);
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
-        }
-        else
-        {
-            this.friendlist.notification_silent = false;
-            orma.updateFriendList().tox_public_key_stringEq(this.friendlist.tox_public_key_string).
-                    notification_silent(this.friendlist.notification_silent).execute();
-
-            final Drawable d_notification = new IconicsDrawable(context).
-                    icon(GoogleMaterial.Icon.gmd_notifications_active).
-                    color(context.getResources().
-                            getColor(R.color.icon_colors)).
-                    alpha(FL_NOTIFICATION_ICON_ALPHA_SELECTED).sizeDp(FL_NOTIFICATION_ICON_SIZE_DP_SELECTED);
-            f_notification.setImageDrawable(d_notification);
-
-            try
-            {
-                if (friend_list_fragment != null)
-                {
-                    // TODO: dirty hack, make better
-                    final boolean sorted_reload = true;
-                    if (!sorted_reload)
-                    {
-                        CombinedFriendsAndConferences cc = new CombinedFriendsAndConferences();
-                        cc.is_friend = COMBINED_IS_FRIEND;
-                        cc.friend_item = this.friendlist;
-                        friend_list_fragment.modify_friend(cc, cc.is_friend);
-                    }
-                    else
-                    {
-                        friend_list_fragment.add_all_friends_clear(0);
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
-        }
-    }
-
     @Override
     public void onClick(View v)
     {
@@ -648,26 +490,103 @@ public class FriendListHolder extends RecyclerView.ViewHolder implements View.On
         {
             if (v.equals(f_notification))
             {
-                AlertDialog.Builder builder = new AlertDialog.Builder(v.getContext());
-                builder.setTitle(v.getContext().getString(R.string.FriendListHolder_toggle_notification_silent_title));
-                builder.setMessage(v.getContext().getString(R.string.FriendListHolder_toggle_notification_silent_message));
-
-                builder.setNegativeButton(v.getContext().getString(R.string.MainActivity_no_button), null);
-                builder.setPositiveButton(v.getContext().getString(R.string.MainActivity_yes_button), new DialogInterface.OnClickListener()
+                if (!this.friendlist.notification_silent)
                 {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which)
-                    {
-                        friend_toggle_notification_silent();
-                    }
-                });
+                    this.friendlist.notification_silent = true;
+                    orma.updateFriendList().tox_public_key_stringEq(this.friendlist.tox_public_key_string).
+                            notification_silent(this.friendlist.notification_silent).execute();
 
-                AlertDialog dialog = builder.create();
-                dialog.show();
+                    final Drawable d_notification = new IconicsDrawable(context).
+                            icon(GoogleMaterial.Icon.gmd_notifications_off).
+                            color(context.getResources().
+                                    getColor(R.color.colorPrimaryDark)).
+                            alpha(FL_NOTIFICATION_ICON_ALPHA_NOT_SELECTED).sizeDp(
+                            FL_NOTIFICATION_ICON_SIZE_DP_NOT_SELECTED);
+                    f_notification.setImageDrawable(d_notification);
+
+                    try
+                    {
+                        if (friend_list_fragment != null)
+                        {
+                            // TODO: dirty hack, make better
+                            final boolean sorted_reload = true;
+                            if (!sorted_reload)
+                            {
+                                CombinedFriendsAndConferences cc = new CombinedFriendsAndConferences();
+                                cc.is_friend = true;
+                                cc.friend_item = this.friendlist;
+                                friend_list_fragment.modify_friend(cc, cc.is_friend);
+                            }
+                            else
+                            {
+                                friend_list_fragment.add_all_friends_clear(0);
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+                else
+                {
+                    this.friendlist.notification_silent = false;
+                    orma.updateFriendList().tox_public_key_stringEq(this.friendlist.tox_public_key_string).
+                            notification_silent(this.friendlist.notification_silent).execute();
+
+                    final Drawable d_notification = new IconicsDrawable(context).
+                            icon(GoogleMaterial.Icon.gmd_notifications_active).
+                            color(context.getResources().
+                                    getColor(R.color.colorPrimaryDark)).
+                            alpha(FL_NOTIFICATION_ICON_ALPHA_SELECTED).sizeDp(FL_NOTIFICATION_ICON_SIZE_DP_SELECTED);
+                    f_notification.setImageDrawable(d_notification);
+
+                    try
+                    {
+                        if (friend_list_fragment != null)
+                        {
+                            // TODO: dirty hack, make better
+                            final boolean sorted_reload = true;
+                            if (!sorted_reload)
+                            {
+                                CombinedFriendsAndConferences cc = new CombinedFriendsAndConferences();
+                                cc.is_friend = true;
+                                cc.friend_item = this.friendlist;
+                                friend_list_fragment.modify_friend(cc, cc.is_friend);
+                            }
+                            else
+                            {
+                                friend_list_fragment.add_all_friends_clear(0);
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
             }
             else
             {
-                show_messagelist_acticvity_for_friend(v.getContext(), this.friendlist.tox_public_key_string);
+                try
+                {
+                    if (progressDialog == null)
+                    {
+                        progressDialog = new ProgressDialog(this.context);
+                        progressDialog.setIndeterminate(true);
+                        progressDialog.setMessage("");
+                        progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+                    }
+                    progressDialog.show();
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+
+                Intent intent = new Intent(v.getContext(), MessageListActivity.class);
+                intent.putExtra("friendnum", tox_friend_by_public_key__wrapper(this.friendlist.tox_public_key_string));
+                v.getContext().startActivity(intent);
             }
         }
         catch (Exception e)
@@ -676,6 +595,7 @@ public class FriendListHolder extends RecyclerView.ViewHolder implements View.On
             Log.i(TAG, "onClick:EE:" + e.getMessage());
         }
     }
+
 
     public void show_confirm_dialog(final View view, final FriendList f2)
     {
@@ -814,7 +734,6 @@ public class FriendListHolder extends RecyclerView.ViewHolder implements View.On
                             send_all_friend_pubkeys_to_relay(f2.tox_public_key_string);
                             send_relay_pubkey_to_all_friends(f2.tox_public_key_string);
                             invite_to_all_conferences_own_relay(f2.tox_public_key_string);
-                            invite_to_all_groups_own_relay(f2.tox_public_key_string);
                         }
                         catch (Exception e)
                         {
@@ -883,7 +802,8 @@ public class FriendListHolder extends RecyclerView.ViewHolder implements View.On
                                     // invite also my ToxProxy -------------
                                     if (have_own_relay())
                                     {
-                                        invite_to_conference_own_relay(res_conf_new);
+                                        tox_conference_invite(tox_friend_by_public_key__wrapper(get_own_relay_pubkey()),
+                                                              res_conf_new);
                                     }
                                     // invite also my ToxProxy -------------
                                     add_conference_wrapper(friend_num_temp_safety2, res_conf_new, "",
@@ -949,28 +869,5 @@ public class FriendListHolder extends RecyclerView.ViewHolder implements View.On
         menu.show();
 
         return true;
-    }
-
-    static void show_messagelist_acticvity_for_friend(Context c, String friend_pubkey)
-    {
-        try
-        {
-            if (friend_progressDialog == null)
-            {
-                friend_progressDialog = new ProgressDialog(c);
-                friend_progressDialog.setIndeterminate(true);
-                friend_progressDialog.setMessage("");
-                friend_progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-            }
-            friend_progressDialog.show();
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-
-        Intent intent = new Intent(c, MessageListActivity.class);
-        intent.putExtra("friendnum", tox_friend_by_public_key__wrapper(friend_pubkey));
-        c.startActivity(intent);
     }
 }

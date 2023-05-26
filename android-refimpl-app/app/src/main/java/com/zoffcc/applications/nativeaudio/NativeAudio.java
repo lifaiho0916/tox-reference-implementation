@@ -29,23 +29,22 @@ import java.util.concurrent.Semaphore;
 import static com.zoffcc.applications.trifa.AudioReceiver.reinit_audio_play_buffers;
 import static com.zoffcc.applications.trifa.AudioRecording.microphone_muted;
 import static com.zoffcc.applications.trifa.MainActivity.PREF__X_eac_delay_ms;
-import static com.zoffcc.applications.trifa.MainActivity.PREF__mic_gain_factor_toggle;
 import static com.zoffcc.applications.trifa.MainActivity.PREF_mic_gain_factor;
 
 public class NativeAudio
 {
     private static final String TAG = "trifa.NativeAudio";
 
-    public static final int n_audio_in_buffer_max_count = 4; // BAD: !!! always keep in sync with native-audio-jni.c `static const int audio_play_buffers_in_queue_max = 10;` !!!
+    public static final int n_audio_in_buffer_max_count = 10; // NORM= 5;
     public static ByteBuffer[] n_audio_buffer = new ByteBuffer[n_audio_in_buffer_max_count];
     public static int n_cur_buf = 0;
     public static int n_buf_size_in_bytes = 0;
     public static int n_buf_iterate_ms = 40; // fixed ms interval for audio play (call and groups)
     public static int[] n_bytes_in_buffer = new int[n_audio_in_buffer_max_count];
     public static int sampling_rate = 48000;
-    public static int channel_count = 1;
+    public static int channel_count = 2;
 
-    public static final int n_rec_audio_in_buffer_max_count = 3; // BAD: !!! always keep in sync with native-audio-jni.c `int num_rec_bufs = 3;` !!!
+    public static final int n_rec_audio_in_buffer_max_count = 3; // BAD: !!! always keep in sync with native-audio-jni.c `int num_rec_bufs = 2;` !!!
     public static ByteBuffer[] n_rec_audio_buffer = new ByteBuffer[n_rec_audio_in_buffer_max_count];
     public static int n_rec_cur_buf = 0;
     public static int n_rec_buf_size_in_bytes = 0;
@@ -166,9 +165,7 @@ public class NativeAudio
         native_audio_engine_down = false;
 
         Log.i(TAG, "audio_rec:StartREC:003:-restart-");
-        Log.i(TAG, "PREF_MicGainFactorToggle=" + PREF__mic_gain_factor_toggle);
         Log.i(TAG, "PREF_MicGainFactor=" + PREF_mic_gain_factor);
-        setMicGainToggle(PREF__mic_gain_factor_toggle);
         setMicGainFactor(PREF_mic_gain_factor);
         NativeAudio.StartREC();
         Log.i(TAG, "audio_rec:StartREC:004:-restart-");
@@ -203,17 +200,6 @@ public class NativeAudio
     public static native float get_vu_in();
 
     public static native float get_vu_out();
-
-    public static native void set_aec_active(int active);
-
-    public static native void set_rec_preset(boolean with_loud_speaker);
-
-    public static native int get_aec_active();
-
-    public static native void set_audio_aec_delay(int delay);
-
-    public static native int get_audio_aec_delay();
-
     // ---------------------
 
     public static native void createBufferQueueAudioPlayer(int sampleRate, int channels, int num_bufs, int eac_delay_ms);
@@ -235,8 +221,6 @@ public class NativeAudio
     public static native void set_JNI_audio_rec_buffer(ByteBuffer buffer, long buffer_size_in_bytes, int num);
 
     public static native void setMicGainFactor(float gain_factor);
-
-    public static native  void setMicGainToggle(boolean lower_volume);
 
     public static native int isRecording();
 

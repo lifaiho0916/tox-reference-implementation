@@ -23,7 +23,10 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import androidx.appcompat.app.AlertDialog;
+import androidx.recyclerview.widget.RecyclerView;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,23 +34,23 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.request.RequestOptions;
 import com.luseen.autolinklibrary.AutoLinkMode;
 import com.luseen.autolinklibrary.AutoLinkOnClickListener;
 import com.luseen.autolinklibrary.EmojiTextViewLinks;
+import com.mikepenz.fontawesome_typeface_library.FontAwesome;
+import com.mikepenz.iconics.IconicsDrawable;
 
-import androidx.appcompat.app.AlertDialog;
-import androidx.recyclerview.widget.RecyclerView;
-
-import static com.zoffcc.applications.trifa.HelperFriend.add_friend_real;
-import static com.zoffcc.applications.trifa.HelperFriend.get_friend_msgv3_capability;
-import static com.zoffcc.applications.trifa.HelperGeneric.dp2px;
-import static com.zoffcc.applications.trifa.HelperGeneric.long_date_time_format;
 import static com.zoffcc.applications.trifa.MainActivity.PREF__global_font_size;
+import static com.zoffcc.applications.trifa.MainActivity.VFS_ENCRYPT;
+import static com.zoffcc.applications.trifa.HelperFriend.add_friend_real;
+import static com.zoffcc.applications.trifa.HelperGeneric.dp2px;
+import static com.zoffcc.applications.trifa.HelperGeneric.get_vfs_image_filename_own_avatar;
+import static com.zoffcc.applications.trifa.HelperGeneric.long_date_time_format;
 import static com.zoffcc.applications.trifa.MainActivity.selected_messages;
 import static com.zoffcc.applications.trifa.MessageListActivity.onClick_message_helper;
 import static com.zoffcc.applications.trifa.MessageListActivity.onLongClick_message_helper;
-import static com.zoffcc.applications.trifa.MessageListFragment.search_messages_text;
-import static com.zoffcc.applications.trifa.TRIFAGlobals.MESSAGES_TIMEDELTA_NO_TIMESTAMP_MS;
 import static com.zoffcc.applications.trifa.TRIFAGlobals.MESSAGE_EMOJI_ONLY_EMOJI_SIZE;
 import static com.zoffcc.applications.trifa.TRIFAGlobals.MESSAGE_EMOJI_SIZE;
 import static com.zoffcc.applications.trifa.TRIFAGlobals.MESSAGE_TEXT_SIZE;
@@ -156,19 +159,15 @@ public class MessageListHolder_text_outgoing_read extends RecyclerView.ViewHolde
         layout_message_container.setOnClickListener(onclick_listener);
         layout_message_container.setOnLongClickListener(onlongclick_listener);
 
-        textView.setOnClickListener(new View.OnClickListener()
-        {
+        textView.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view)
-            {
+            public void onClick(View view) {
                 layout_message_container.performClick();
             }
         });
-        textView.setOnLongClickListener(new View.OnLongClickListener()
-        {
+        textView.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
-            public boolean onLongClick(View view)
-            {
+            public boolean onLongClick(View view) {
                 layout_message_container.performLongClick();
                 return true;
             }
@@ -180,7 +179,7 @@ public class MessageListHolder_text_outgoing_read extends RecyclerView.ViewHolde
         final String unicode_MEMO = "\uD83D\uDCDD";
         final String unicode_ARROW_LEFT = "←";
 
-        if ((m.msg_version == 1) || (get_friend_msgv3_capability(m.tox_friendpubkey) == 1))
+        if (m.msg_version == 1)
         {
             date_time.setText(unicode_ARROW_LEFT + long_date_time_format(m.sent_timestamp) + "\n" +
                               unicode_Mobile_Phone_With_Arrow + long_date_time_format(m.rcvd_timestamp));
@@ -205,14 +204,7 @@ public class MessageListHolder_text_outgoing_read extends RecyclerView.ViewHolde
             textView.setEmojiSize((int) dp2px(MESSAGE_EMOJI_SIZE[PREF__global_font_size]));
         }
 
-        if ((search_messages_text == null) || (search_messages_text.length() == 0))
-        {
-            textView.setAutoLinkText(m.text);
-        }
-        else
-        {
-            textView.setAutoLinkTextHighlight(m.text, search_messages_text);
-        }
+        textView.setAutoLinkText(m.text);
 
         if (!m.read)
         {
@@ -266,62 +258,49 @@ public class MessageListHolder_text_outgoing_read extends RecyclerView.ViewHolde
         });
 
 
-        HelperGeneric.fill_own_avatar_icon(context, img_avatar);
+        final Drawable d_lock = new IconicsDrawable(context).icon(FontAwesome.Icon.faw_lock).color(
+                context.getResources().getColor(R.color.colorPrimaryDark)).sizeDp(50);
+        img_avatar.setImageDrawable(d_lock);
 
-        // --------- timestamp (show only if different from previous message) ---------
-        // --------- timestamp (show only if different from previous message) ---------
-        // --------- timestamp (show only if different from previous message) ---------
-        date_time.setVisibility(View.GONE);
-        if (my_position != RecyclerView.NO_POSITION)
+        try
         {
-            try
+            if (VFS_ENCRYPT)
             {
-                if (MainActivity.message_list_fragment.adapter != null)
-                {
-                    if (my_position < 1)
-                    {
-                        date_time.setVisibility(View.VISIBLE);
-                    }
-                    // else if (m.msg_version == 1)
-                    // {
-                    //     date_time.setVisibility(View.VISIBLE);
-                    // }
-                    else
-                    {
-                        final MessagelistAdapter.DateTime_in_out peer_cur = MainActivity.message_list_fragment.adapter.getDateTime(
-                                my_position);
-                        final MessagelistAdapter.DateTime_in_out peer_prev = MainActivity.message_list_fragment.adapter.getDateTime(
-                                my_position - 1);
-                        if ((peer_cur == null) || (peer_prev == null))
-                        {
-                            date_time.setVisibility(View.VISIBLE);
-                        }
-                        // else if (peer_cur.direction != peer_prev.direction)
-                        // {
-                        //     date_time.setVisibility(View.VISIBLE);
-                        // }
-                        else
-                        {
-                            // if message is within 20 seconds of previous message and same direction and same peer
-                            // then do not show timestamp
-                            if (peer_cur.timestamp > peer_prev.timestamp + (MESSAGES_TIMEDELTA_NO_TIMESTAMP_MS))
-                            {
-                                date_time.setVisibility(View.VISIBLE);
-                            }
-                        }
+                String fname = get_vfs_image_filename_own_avatar();
 
+                info.guardianproject.iocipher.File f1 = null;
+                try
+                {
+                    if (fname != null)
+                    {
+                        f1 = new info.guardianproject.iocipher.File(fname);
+                    }
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+
+                if ((f1 != null) && (fname != null))
+                {
+                    if (f1.length() > 0)
+                    {
+                        final RequestOptions glide_options = new RequestOptions().fitCenter();
+                        GlideApp.
+                                with(context).
+                                load(f1).
+                                diskCacheStrategy(DiskCacheStrategy.RESOURCE).
+                                skipMemoryCache(false).
+                                apply(glide_options).
+                                into(img_avatar);
                     }
                 }
             }
-            catch (Exception e)
-            {
-            }
         }
-        // --------- timestamp (show only if different from previous message) ---------
-        // --------- timestamp (show only if different from previous message) ---------
-        // --------- timestamp (show only if different from previous message) ---------
-
-        HelperGeneric.set_avatar_img_height_in_chat(img_avatar);
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
     }
 
     @Override

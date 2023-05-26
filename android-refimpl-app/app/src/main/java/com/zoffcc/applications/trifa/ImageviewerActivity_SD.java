@@ -19,15 +19,13 @@
 
 package com.zoffcc.applications.trifa;
 
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.RequestOptions;
 import com.github.chrisbanes.photoview.PhotoView;
-
-import androidx.appcompat.app.AppCompatActivity;
 
 import static com.zoffcc.applications.trifa.MainActivity.VFS_ENCRYPT;
 
@@ -43,38 +41,15 @@ public class ImageviewerActivity_SD extends AppCompatActivity
 
         // TODO: bad!
         String image_filename = "/xx/xyz.png";
-        String storage_frame_work = "0";
 
         try
         {
-            storage_frame_work = getIntent().getStringExtra("storage_frame_work");
+            image_filename = getIntent().getStringExtra("image_filename");
+            // Log.i(TAG, "onCreate:image_filename=" + image_filename);
         }
         catch (Exception e)
         {
             e.getMessage();
-        }
-
-        if (storage_frame_work == null)
-        {
-            storage_frame_work = "0";
-        }
-
-        Uri uri = null;
-        if (storage_frame_work.equals("1"))
-        {
-            uri = Uri.parse(getIntent().getStringExtra("image_filename"));
-        }
-        else
-        {
-            try
-            {
-                image_filename = getIntent().getStringExtra("image_filename");
-                // Log.i(TAG, "onCreate:image_filename=" + image_filename);
-            }
-            catch (Exception e)
-            {
-                e.getMessage();
-            }
         }
 
         final PhotoView photoView = (PhotoView) findViewById(R.id.big_image);
@@ -84,48 +59,25 @@ public class ImageviewerActivity_SD extends AppCompatActivity
 
         if (VFS_ENCRYPT)
         {
-            if (storage_frame_work.equals("0"))
+            final String image_filename_ = image_filename;
+
+            java.io.File f2 = new java.io.File(image_filename_);
+            try
             {
-                final String image_filename_ = image_filename;
-                java.io.File f2 = new java.io.File(image_filename_);
+                RequestOptions req_options = new RequestOptions(); //.onlyRetrieveFromCache(true);
 
-                try
-                {
-                    RequestOptions req_options = new RequestOptions(); //.onlyRetrieveFromCache(true);
-
-                    GlideApp.
-                            with(this).
-                            load(f2).
-                            diskCacheStrategy(DiskCacheStrategy.RESOURCE).
-                            skipMemoryCache(false).
-                            apply(req_options).
-                            placeholder(R.drawable.round_loading_animation).
-                            into(photoView);
-                }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
-                }
+                GlideApp.
+                        with(this).
+                        load(f2).
+                        diskCacheStrategy(DiskCacheStrategy.RESOURCE).
+                        skipMemoryCache(false).
+                        apply(req_options).
+                        placeholder(R.drawable.round_loading_animation).
+                        into(photoView);
             }
-            else
+            catch (Exception e)
             {
-                try
-                {
-                    RequestOptions req_options = new RequestOptions(); //.onlyRetrieveFromCache(true);
-
-                    GlideApp.
-                            with(this).
-                            load(uri).
-                            diskCacheStrategy(DiskCacheStrategy.RESOURCE).
-                            skipMemoryCache(false).
-                            apply(req_options).
-                            placeholder(R.drawable.round_loading_animation).
-                            into(photoView);
-                }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
-                }
+                e.printStackTrace();
             }
         }
     }

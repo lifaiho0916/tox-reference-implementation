@@ -6,7 +6,7 @@ import java.security.MessageDigest
 
 // ----------------------------------------------------
 //
-// Zoff (c) in 2020 - 2022
+// Zoff (c) in 2020
 //
 // run: "gradlew -q calculateChecksums"
 // to generate new checksums. you need to put those manually into 'witness.gradle'
@@ -94,31 +94,16 @@ static Map<DependencyKey, String> calculateHashes(Project project) {
         }
         // Skip unresolvable configurations
         if (it.metaClass.respondsTo(it, 'isCanBeResolved') ? it.isCanBeResolved() : true) {
-            // DEBUG: println "IT::::::::${it.toString()} xxxxxxxx ${it.class}"
-            // DEBUG: println "IT222::: ${it.properties}"
-            // DEBUG: println "IT222::: ${it.properties.get("asFiletree")}"
-            try {
-                if (
-                        (it.toString() != "configuration ':app:releaseIntransitiveDependenciesMetadata'") &&
-                                (it.toString() != "configuration ':app:debugImplementationDependenciesMetadata'") &&
-                                (it.toString() != "configuration ':app:implementationDependenciesMetadata'") &&
-                                (it.toString() != "configuration ':app:releaseImplementationDependenciesMetadata'")
-                ) {
-                    it.fileCollection { dep ->
-                        // DEBUG: println "DEP::::::::${dep}"
-                        // Skip dependencies on other projects
-                        dep.version != 'unspecified'
-                    }.each {
-                        // Skip files within project directory
-                        if (!it.canonicalPath.startsWith(projectPath)) {
-                            def key = makeKey it.path
-                            if (!dependencies.containsKey(key))
-                                dependencies.put key, calculateSha256(it)
-                        }
-                    }
+            it.fileCollection { dep ->
+                // Skip dependencies on other projects
+                dep.version != 'unspecified'
+            }.each {
+                // Skip files within project directory
+                if (!it.canonicalPath.startsWith(projectPath)) {
+                    def key = makeKey it.path
+                    if (!dependencies.containsKey(key))
+                        dependencies.put key, calculateSha256(it)
                 }
-            } catch (Exception e) {
-                println "gradle_witness_ng_error:EEE-0001:${e.message}"
             }
         }
     }
@@ -214,6 +199,9 @@ project.task('printDependencies').doLast {
         it.value.dependencies.each { println "        ${it}" }
     }
 }
+
+assemble.dependsOn pinChecksums
+build.dependsOn pinChecksums
 
 tasks.matching { task ->
     task.name.startsWith('assemble')

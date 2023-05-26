@@ -23,6 +23,7 @@ import android.app.ProgressDialog;
 import android.content.ClipData;
 import android.content.Context;
 import android.database.Cursor;
+import androidx.annotation.NonNull;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -32,9 +33,6 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Locale;
 
-import androidx.annotation.NonNull;
-
-import static com.zoffcc.applications.trifa.CombinedFriendsAndConferences.COMBINED_IS_CONFERENCE;
 import static com.zoffcc.applications.trifa.TRIFAGlobals.CONFERENCE_ID_LENGTH;
 import static com.zoffcc.applications.trifa.ToxVars.TOX_CONFERENCE_TYPE.TOX_CONFERENCE_TYPE_AV;
 import static com.zoffcc.applications.trifa.ToxVars.TOX_CONFERENCE_TYPE.TOX_CONFERENCE_TYPE_TEXT;
@@ -70,12 +68,12 @@ public class HelperConference
                         {
                             first = false;
                             copy_text = new StringBuilder(
-                                    "" + orma.selectFromConferenceMessage().idEq((Long) i.next()).get(0).text);
+                                "" + orma.selectFromConferenceMessage().idEq((Long) i.next()).get(0).text);
                         }
                         else
                         {
                             copy_text.append("\n").append(
-                                    orma.selectFromConferenceMessage().idEq((Long) i.next()).get(0).text);
+                                orma.selectFromConferenceMessage().idEq((Long) i.next()).get(0).text);
                         }
                     }
                     catch (Exception e)
@@ -105,69 +103,9 @@ public class HelperConference
         }
     }
 
-    static void copy_selected_group_messages(Context c)
-    {
-        try
-        {
-            if (!MainActivity.selected_group_messages.isEmpty())
-            {
-                // sort ascending (lowest ID on top)
-                Collections.sort(MainActivity.selected_group_messages, new Comparator<Long>()
-                {
-                    public int compare(Long o1, Long o2)
-                    {
-                        return o1.compareTo(o2);
-                    }
-                });
-                StringBuilder copy_text = new StringBuilder();
-                boolean first = true;
-                Iterator i = MainActivity.selected_group_messages.iterator();
-
-                while (i.hasNext())
-                {
-                    try
-                    {
-                        if (first)
-                        {
-                            first = false;
-                            copy_text = new StringBuilder(
-                                    "" + orma.selectFromGroupMessage().idEq((Long) i.next()).get(0).text);
-                        }
-                        else
-                        {
-                            copy_text.append("\n").append(
-                                    orma.selectFromGroupMessage().idEq((Long) i.next()).get(0).text);
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        e.printStackTrace();
-                    }
-                }
-
-                MainActivity.clipboard.setPrimaryClip(ClipData.newPlainText("", copy_text.toString()));
-                Toast.makeText(c, "copied to Clipboard", Toast.LENGTH_SHORT).show();
-                MainActivity.selected_group_messages.clear();
-
-                try
-                {
-                    // need to redraw all items again here, to remove the selections
-                    MainActivity.group_message_list_fragment.adapter.redraw_all_items();
-                }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
-                }
-            }
-        }
-        catch (Exception e2)
-        {
-            e2.printStackTrace();
-        }
-    }
-
     static void delete_selected_conference_messages(Context c, final boolean update_conf_message_list, final String dialog_text)
     {
+        // TODO: write me!
         ProgressDialog progressDialog2 = null;
 
         try
@@ -175,22 +113,6 @@ public class HelperConference
             new MainActivity.delete_selected_conference_messages_asynchtask(c, progressDialog2,
                                                                             update_conf_message_list,
                                                                             dialog_text).execute();
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-            Log.i(TAG, "delete_selected_conference_messages:EE2:" + e.getMessage());
-        }
-    }
-
-    static void delete_selected_group_messages(Context c, final boolean update_group_message_list, final String dialog_text)
-    {
-        ProgressDialog progressDialog2 = null;
-
-        try
-        {
-            new MainActivity.delete_selected_group_messages_asynchtask(c, progressDialog2, update_group_message_list,
-                                                                       dialog_text).execute();
         }
         catch (Exception e)
         {
@@ -266,8 +188,8 @@ public class HelperConference
         try
         {
             return (orma.selectFromConferenceDB().
-                    conference_identifierEq(conference_identifier).
-                    toList().get(0).conference_active);
+                conference_identifierEq(conference_identifier).
+                toList().get(0).conference_active);
         }
         catch (Exception e)
         {
@@ -278,8 +200,26 @@ public class HelperConference
 
     public static String tox_conference_peer_get_public_key__wrapper(long conference_number, long peer_number)
     {
-        String result = MainActivity.tox_conference_peer_get_public_key(conference_number, peer_number);
-        return result;
+        if (MainActivity.cache_peernum_pubkey.containsKey("" + conference_number + ":" + peer_number))
+        {
+            // Log.i(TAG, "cache hit:2");
+            return MainActivity.cache_peernum_pubkey.get("" + conference_number + ":" + peer_number);
+        }
+        else
+        {
+            if (MainActivity.cache_peernum_pubkey.size() >= 100)
+            {
+                // TODO: bad!
+                MainActivity.cache_peernum_pubkey.clear();
+            }
+
+            String result = MainActivity.tox_conference_peer_get_public_key(conference_number, peer_number);
+            if ((conference_number != -1) && (peer_number != -1))
+            {
+                MainActivity.cache_peernum_pubkey.put("" + conference_number + ":" + peer_number, result);
+            }
+            return result;
+        }
     }
 
     public static String tox_conference_peer_get_name__wrapper(String conference_identifier, String peer_pubkey)
@@ -326,13 +266,13 @@ public class HelperConference
         try
         {
             ConferenceMessage cm = orma.selectFromConferenceMessage().
-                    conference_identifierEq(conference_identifier.toLowerCase()).
-                    and().
-                    rcvd_timestampGt(System.currentTimeMillis() - (n * 1000)).
-                    orderByRcvd_timestampDesc().
-                    limit(1).
-                    toList().
-                    get(0);
+                conference_identifierEq(conference_identifier.toLowerCase()).
+                and().
+                rcvd_timestampGt(System.currentTimeMillis() - (n * 1000)).
+                orderByRcvd_timestampDesc().
+                limit(1).
+                toList().
+                get(0);
             return cm;
         }
         catch (Exception e)
@@ -342,34 +282,33 @@ public class HelperConference
         }
     }
 
-    static ConferenceMessage get_last_conference_message_in_this_conference_within_n_seconds_from_sender_pubkey(String conference_identifier, String sender_pubkey, long sent_timestamp, String message_id_tox, int n, boolean was_synced)
+    static long insert_into_conference_message_db_system_message(final ConferenceMessage m, final boolean update_conference_view_flag)
     {
+        long row_id = orma.insertIntoConferenceMessage(m);
+
         try
         {
-            if ((message_id_tox == null) || (message_id_tox.length() < 8))
+            Cursor cursor = orma.getConnection().rawQuery(
+                "SELECT id FROM ConferenceMessage where rowid='" + row_id + "'");
+            cursor.moveToFirst();
+            //Log.i(TAG, "insert_into_conference_message_db:id res count=" + cursor.getColumnCount());
+            long msg_id = cursor.getLong(0);
+            cursor.close();
+
+            if (update_conference_view_flag)
             {
-                return null;
+                if (MainActivity.PREF__conference_show_system_messages)
+                {
+                    HelperMessage.add_single_conference_message_from_messge_id(msg_id, true);
+                }
             }
 
-            final int SECONDS_FOR_DOUBLE_MESSAGES_INTERVAL = 60 * 60 * 2; // 2 hours
-
-            ConferenceMessage cm = orma.selectFromConferenceMessage().
-                    conference_identifierEq(conference_identifier.toLowerCase()).
-                    tox_peerpubkeyEq(sender_pubkey.toUpperCase()).
-                    message_id_toxEq(message_id_tox.toLowerCase()).
-                    sent_timestampGt(sent_timestamp - (SECONDS_FOR_DOUBLE_MESSAGES_INTERVAL * 1000)).
-                    sent_timestampLt(sent_timestamp + (SECONDS_FOR_DOUBLE_MESSAGES_INTERVAL * 1000)).
-                    limit(1).
-                    toList().
-                    get(0);
-
-
-            return cm;
+            return msg_id;
         }
         catch (Exception e)
         {
-            // e.printStackTrace();
-            return null;
+            e.printStackTrace();
+            return -1;
         }
     }
 
@@ -380,7 +319,7 @@ public class HelperConference
         try
         {
             Cursor cursor = orma.getConnection().rawQuery(
-                    "SELECT id FROM ConferenceMessage where rowid='" + row_id + "'");
+                "SELECT id FROM ConferenceMessage where rowid='" + row_id + "'");
             cursor.moveToFirst();
             //Log.i(TAG, "insert_into_conference_message_db:id res count=" + cursor.getColumnCount());
             long msg_id = cursor.getLong(0);
@@ -436,9 +375,6 @@ public class HelperConference
         t.start();
     }
 
-    /*
-     this is a bit costly, asking for pubkeys of all conference peers
-     */
     static long get_peernum_from_peer_pubkey(String conference_id, String peer_pubkey)
     {
         try
@@ -503,8 +439,8 @@ public class HelperConference
         try
         {
             return orma.selectFromConferenceDB().
-                    conference_activeEq(true).and().
-                    conference_identifierEq(conference_id.toLowerCase()).get(0).tox_conference_number;
+                conference_activeEq(true).and().
+                conference_identifierEq(conference_id.toLowerCase()).get(0).tox_conference_number;
         }
         catch (Exception e)
         {
@@ -518,7 +454,7 @@ public class HelperConference
         {
             // try in the database
             String name = orma.selectFromConferenceDB().
-                    conference_identifierEq(conference_id).get(0).name;
+                conference_identifierEq(conference_id).get(0).name;
 
             if ((name == null) || (name.equals("-1")))
             {
@@ -538,8 +474,8 @@ public class HelperConference
         try
         {
             String name = MainActivity.tox_conference_get_title(orma.selectFromConferenceDB().
-                    conference_activeEq(true).and().
-                    conference_identifierEq(conference_id).get(0).tox_conference_number);
+                conference_activeEq(true).and().
+                conference_identifierEq(conference_id).get(0).tox_conference_number);
 
             if ((name == null) || (name.equals("-1")))
             {
@@ -551,8 +487,8 @@ public class HelperConference
             {
                 // remember it in the Database
                 orma.updateConferenceDB().
-                        conference_identifierEq(conference_id).
-                        name(name).execute();
+                    conference_identifierEq(conference_id).
+                    name(name).execute();
             }
             catch (Exception e2)
             {
@@ -578,7 +514,7 @@ public class HelperConference
         {
             // try in the database
             int kind = orma.selectFromConferenceDB().
-                    conference_identifierEq(conference_id).get(0).kind;
+                conference_identifierEq(conference_id).get(0).kind;
 
             if ((kind < TOX_CONFERENCE_TYPE_TEXT.value) || (kind > TOX_CONFERENCE_TYPE_AV.value))
             {
@@ -631,9 +567,9 @@ public class HelperConference
         try
         {
             orma.updateConferenceDB().
-                    conference_active(false).
-                    tox_conference_number(-1).
-                    execute();
+                conference_active(false).
+                tox_conference_number(-1).
+                execute();
             Log.i(TAG, "set_all_conferences_inactive");
         }
         catch (Exception e)
@@ -648,10 +584,10 @@ public class HelperConference
         try
         {
             orma.updateConferenceDB().
-                    conference_identifierEq(conference_identifier).
-                    conference_active(false).
-                    tox_conference_number(-1).
-                    execute();
+                conference_identifierEq(conference_identifier).
+                conference_active(false).
+                tox_conference_number(-1).
+                execute();
         }
         catch (Exception e)
         {
@@ -666,22 +602,22 @@ public class HelperConference
         {
             // Log.i(TAG, "new_or_updated_conference:" + "conference_number=" + conference_identifier);
             final ConferenceDB conf2 = orma.selectFromConferenceDB().
-                    conference_identifierEq(conference_identifier).toList().get(0);
+                conference_identifierEq(conference_identifier).toList().get(0);
             // conference already exists -> update and connect
             orma.updateConferenceDB().
-                    conference_identifierEq(conference_identifier).
-                    conference_active(true).
-                    kind(conference_type).
-                    tox_conference_number(conference_number).execute();
+                conference_identifierEq(conference_identifier).
+                conference_active(true).
+                kind(conference_type).
+                tox_conference_number(conference_number).execute();
 
             try
             {
                 Log.i(TAG, "new_or_updated_conference:*update*");
                 final ConferenceDB conf3 = orma.selectFromConferenceDB().
-                        conference_identifierEq(conference_identifier).toList().get(0);
+                    conference_identifierEq(conference_identifier).toList().get(0);
                 // update or add to "friendlist"
                 CombinedFriendsAndConferences cc = new CombinedFriendsAndConferences();
-                cc.is_friend = COMBINED_IS_CONFERENCE;
+                cc.is_friend = false;
                 cc.conference_item = ConferenceDB.deep_copy(conf3);
                 MainActivity.friend_list_fragment.modify_friend(cc, cc.is_friend);
             }
@@ -716,7 +652,7 @@ public class HelperConference
                 {
                     // update or add to "friendlist"
                     CombinedFriendsAndConferences cc = new CombinedFriendsAndConferences();
-                    cc.is_friend = COMBINED_IS_CONFERENCE;
+                    cc.is_friend = false;
                     cc.conference_item = ConferenceDB.deep_copy(conf_new);
                     MainActivity.friend_list_fragment.modify_friend(cc, cc.is_friend);
                 }
@@ -742,7 +678,7 @@ public class HelperConference
             if (conf != null)
             {
                 CombinedFriendsAndConferences cc = new CombinedFriendsAndConferences();
-                cc.is_friend = COMBINED_IS_CONFERENCE;
+                cc.is_friend = false;
                 cc.conference_item = conf;
                 MainActivity.friend_list_fragment.modify_friend(cc, cc.is_friend);
             }

@@ -147,6 +147,7 @@ public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.C
         return optimalSize;
     }
 
+
     @Override
     public boolean onTouchEvent(MotionEvent event)
     {
@@ -157,14 +158,14 @@ public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.C
                 // make view INVISIBLE (totally transparent)
                 my_alpha = 0.0f;
                 this.setAlpha(0.0f);
-                toggle_osd_views(false, false);
+                toggle_osd_views(false);
             }
             else
             {
                 // make view visible
                 my_alpha = 1.0f;
                 this.setAlpha(1.0f);
-                toggle_osd_views(true, false);
+                toggle_osd_views(true);
             }
             return true;
         }
@@ -294,14 +295,7 @@ public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.C
     public void surfaceDestroyed(SurfaceHolder holder)
     {
         Log.i(TAG, "surfaceDestroyed...");
-        try
-        {
-            CameraWrapper.getInstance().doStopCamera();
-        }
-        catch (Exception e)
-        {
-            Log.i(TAG, "surfaceDestroyed:EE01:" + e.getMessage());
-        }
+        CameraWrapper.getInstance().doStopCamera();
     }
 
     public SurfaceHolder getSurfaceHolder()

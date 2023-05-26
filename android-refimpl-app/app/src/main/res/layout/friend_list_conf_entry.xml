@@ -79,7 +79,6 @@
             android:paddingRight="5dp"
             android:singleLine="true"
             android:text="this is my status message long line this is my status message long line this is my status message long line"
-            android:textColor="@color/friend_list_text_color"
             android:textSize="11sp"
             android:typeface="monospace" />
 
@@ -96,7 +95,6 @@
             android:maxLines="2"
             android:paddingRight="5dp"
             android:text="example name long name long name long name long name long name"
-            android:textColor="@color/md_black_1000"
             android:textSize="16sp"
             android:textStyle="bold" />
 

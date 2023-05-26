@@ -21,9 +21,10 @@ package com.zoffcc.applications.trifa;
 
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
+import androidx.appcompat.widget.PopupMenu;
+import androidx.recyclerview.widget.RecyclerView;
 import android.text.Html;
 import android.util.Log;
 import android.view.MenuItem;
@@ -35,22 +36,16 @@ import android.widget.TextView;
 import com.mikepenz.google_material_typeface_library.GoogleMaterial;
 import com.mikepenz.iconics.IconicsDrawable;
 
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.widget.PopupMenu;
-import androidx.recyclerview.widget.RecyclerView;
-
 import static com.zoffcc.applications.trifa.HelperConference.conference_identifier_short;
 import static com.zoffcc.applications.trifa.HelperConference.delete_conference;
 import static com.zoffcc.applications.trifa.HelperConference.delete_conference_all_messages;
 import static com.zoffcc.applications.trifa.HelperConference.get_conference_title_from_confid;
 import static com.zoffcc.applications.trifa.HelperConference.set_conference_inactive;
-import static com.zoffcc.applications.trifa.HelperGeneric.update_savedata_file_wrapper;
-import static com.zoffcc.applications.trifa.MainActivity.PREF__dark_mode_pref;
 import static com.zoffcc.applications.trifa.MainActivity.cache_confid_confnum;
 import static com.zoffcc.applications.trifa.MainActivity.main_handler_s;
 import static com.zoffcc.applications.trifa.MainActivity.tox_conference_delete;
-import static com.zoffcc.applications.trifa.MainActivity.tox_conference_offline_peer_count;
 import static com.zoffcc.applications.trifa.MainActivity.tox_conference_peer_count;
+import static com.zoffcc.applications.trifa.HelperGeneric.update_savedata_file_wrapper;
 import static com.zoffcc.applications.trifa.TRIFAGlobals.FL_NOTIFICATION_ICON_ALPHA_NOT_SELECTED;
 import static com.zoffcc.applications.trifa.TRIFAGlobals.FL_NOTIFICATION_ICON_ALPHA_SELECTED;
 import static com.zoffcc.applications.trifa.TRIFAGlobals.FL_NOTIFICATION_ICON_SIZE_DP_NOT_SELECTED;
@@ -73,21 +68,19 @@ public class ConferenceListHolder extends RecyclerView.ViewHolder implements Vie
     private ImageView imageView2;
     private ImageView f_notification;
     private ViewGroup f_conf_container_parent;
-    static ProgressDialog conference_progressDialog = null;
+    static ProgressDialog progressDialog = null;
 
     synchronized static void remove_progress_dialog()
     {
         try
         {
-            if (conference_progressDialog != null)
+            if (progressDialog != null)
             {
-                if (ConferenceListHolder.conference_progressDialog.isShowing())
+                if (ConferenceListHolder.progressDialog.isShowing())
                 {
-                    conference_progressDialog.dismiss();
+                    progressDialog.dismiss();
                 }
             }
-
-            conference_progressDialog = null;
         }
         catch (Exception e)
         {
@@ -135,7 +128,7 @@ public class ConferenceListHolder extends RecyclerView.ViewHolder implements Vie
             final Drawable d_notification = new IconicsDrawable(context).
                     icon(GoogleMaterial.Icon.gmd_notifications_off).
                     color(context.getResources().
-                            getColor(R.color.icon_colors)).
+                            getColor(R.color.colorPrimaryDark)).
                     alpha(FL_NOTIFICATION_ICON_ALPHA_NOT_SELECTED).sizeDp(FL_NOTIFICATION_ICON_SIZE_DP_NOT_SELECTED);
             f_notification.setImageDrawable(d_notification);
             f_notification.setOnClickListener(this);
@@ -145,7 +138,7 @@ public class ConferenceListHolder extends RecyclerView.ViewHolder implements Vie
             final Drawable d_notification = new IconicsDrawable(context).
                     icon(GoogleMaterial.Icon.gmd_notifications_active).
                     color(context.getResources().
-                            getColor(R.color.icon_colors)).
+                            getColor(R.color.colorPrimaryDark)).
                     alpha(FL_NOTIFICATION_ICON_ALPHA_SELECTED).sizeDp(FL_NOTIFICATION_ICON_SIZE_DP_SELECTED);
             f_notification.setImageDrawable(d_notification);
             f_notification.setOnClickListener(this);
@@ -155,14 +148,14 @@ public class ConferenceListHolder extends RecyclerView.ViewHolder implements Vie
         {
             f_conf_container_parent.setBackgroundResource(R.drawable.friend_list_conf_av_round_bg);
             final Drawable d_lock = new IconicsDrawable(context).icon(GoogleMaterial.Icon.gmd_music_note).
-                    color(context.getResources().getColor(R.color.icon_colors)).sizeDp(80);
+                    color(context.getResources().getColor(R.color.colorPrimaryDark)).sizeDp(80);
             avatar.setImageDrawable(d_lock);
         }
         else
         {
             f_conf_container_parent.setBackgroundResource(R.drawable.friend_list_conf_round_bg);
             final Drawable d_lock = new IconicsDrawable(context).icon(GoogleMaterial.Icon.gmd_group).
-                    color(context.getResources().getColor(R.color.icon_colors)).sizeDp(80);
+                    color(context.getResources().getColor(R.color.colorPrimaryDark)).sizeDp(80);
             avatar.setImageDrawable(d_lock);
         }
 
@@ -171,31 +164,18 @@ public class ConferenceListHolder extends RecyclerView.ViewHolder implements Vie
             if (fl.conference_active)
             {
                 long user_count = tox_conference_peer_count(fl.tox_conference_number);
-                long offline_user_count = tox_conference_offline_peer_count(fl.tox_conference_number);
 
                 if (user_count < 0)
                 {
                     user_count = 0;
                 }
 
-                String peer_num_text_color = "#000000";
-                if (PREF__dark_mode_pref == 1)
-                {
-                    peer_num_text_color = "#ffffff";
-                }
-
-                String peer_num_text_color_text = "<font color=\"" + peer_num_text_color + "\">";
-                String peer_num_text_color_text_end = "</font>";
-                peer_num_text_color_text="";
-                peer_num_text_color_text_end="";
-
                 statusText.setText(Html.fromHtml("#" + fl.tox_conference_number + " "
                                                  //
                                                  + conference_identifier_short(fl.conference_identifier, true)
                                                  //
-                                                 + " " + "<b>" + peer_num_text_color_text + "Users:" + user_count +
-                                                 "(" + offline_user_count + ")" + peer_num_text_color_text_end +
-                                                 "</b>"));
+                                                 + " " + "<b><font color=\"#000000\">Users:" + user_count +
+                                                 "</font></b>"));
             }
             else
             {
@@ -233,9 +213,9 @@ public class ConferenceListHolder extends RecyclerView.ViewHolder implements Vie
 
             if (new_messages_count > 0)
             {
-                if (new_messages_count > 99)
+                if (new_messages_count > 300)
                 {
-                    unread_count.setText("+"); //("∞");
+                    unread_count.setText("+");
                 }
                 else
                 {
@@ -275,7 +255,7 @@ public class ConferenceListHolder extends RecyclerView.ViewHolder implements Vie
                     final Drawable d_notification = new IconicsDrawable(context).
                             icon(GoogleMaterial.Icon.gmd_notifications_off).
                             color(context.getResources().
-                                    getColor(R.color.icon_colors)).
+                                    getColor(R.color.colorPrimaryDark)).
                             alpha(FL_NOTIFICATION_ICON_ALPHA_NOT_SELECTED).sizeDp(
                             FL_NOTIFICATION_ICON_SIZE_DP_NOT_SELECTED);
                     f_notification.setImageDrawable(d_notification);
@@ -289,7 +269,7 @@ public class ConferenceListHolder extends RecyclerView.ViewHolder implements Vie
                     final Drawable d_notification = new IconicsDrawable(context).
                             icon(GoogleMaterial.Icon.gmd_notifications_active).
                             color(context.getResources().
-                                    getColor(R.color.icon_colors)).
+                                    getColor(R.color.colorPrimaryDark)).
                             alpha(FL_NOTIFICATION_ICON_ALPHA_SELECTED).sizeDp(FL_NOTIFICATION_ICON_SIZE_DP_SELECTED);
                     f_notification.setImageDrawable(d_notification);
                 }
@@ -298,14 +278,14 @@ public class ConferenceListHolder extends RecyclerView.ViewHolder implements Vie
             {
                 try
                 {
-                    if (conference_progressDialog == null)
+                    if (progressDialog == null)
                     {
-                        conference_progressDialog = new ProgressDialog(this.context);
-                        conference_progressDialog.setIndeterminate(true);
-                        conference_progressDialog.setMessage("");
-                        conference_progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+                        progressDialog = new ProgressDialog(this.context);
+                        progressDialog.setIndeterminate(true);
+                        progressDialog.setMessage("");
+                        progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
                     }
-                    conference_progressDialog.show();
+                    progressDialog.show();
                 }
                 catch (Exception e)
                 {
@@ -349,23 +329,115 @@ public class ConferenceListHolder extends RecyclerView.ViewHolder implements Vie
                 int id = item.getItemId();
                 switch (id)
                 {
-                    case R.id.item_info:
-                        // show conference info page -----------------
-                        Intent intent = new Intent(v.getContext(), ConferenceInfoActivity.class);
-                        intent.putExtra("conf_id", f2.conference_identifier);
-                        v.getContext().startActivity(intent);
-                        // show conference info page -----------------
-                        break;
+                    //                    case R.id.item_info:
+                    //                        // show conference info page -----------------
+                    //                        long friend_num_temp_safety = tox_friend_by_public_key__wrapper(f2.tox_public_key_string);
+                    //
+                    //                        Log.i(TAG, "onMenuItemClick:info:1:fn_safety=" + friend_num_temp_safety);
+                    //
+                    //                        Intent intent = new Intent(v.getContext(), FriendInfoActivity.class);
+                    //                        intent.putExtra("friendnum", friend_num_temp_safety);
+                    //                        v.getContext().startActivity(intent);
+                    //                        // show conference info page -----------------
+                    //                        break;
                     case R.id.item_leave:
                         // leave conference -----------------
-                        show_confirm_conference_leave_dialog(v, f2);
+                        if ((f2.tox_conference_number > -1) && (f2.conference_active))
+                        {
+                            tox_conference_delete(f2.tox_conference_number);
+                            cache_confid_confnum.clear();
+                            update_savedata_file_wrapper(); // after deleteing a conference
+                        }
+
+                        set_conference_inactive(f2.conference_identifier);
+
+                        Runnable myRunnable = new Runnable()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                try
+                                {
+                                    try
+                                    {
+                                        if (MainActivity.friend_list_fragment != null)
+                                        {
+                                            // reload friendlist
+                                            // TODO: only remove 1 item, don't clear all!! this can crash
+                                            MainActivity.friend_list_fragment.add_all_friends_clear(200);
+                                        }
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        e.printStackTrace();
+                                    }
+                                }
+                                catch (Exception e)
+                                {
+                                    e.printStackTrace();
+                                    Log.i(TAG, "onMenuItemClick:8:EE:" + e.getMessage());
+                                }
+                            }
+                        };
+
+                        // TODO: use own handler
+                        if (main_handler_s != null)
+                        {
+                            main_handler_s.post(myRunnable);
+                        }
                         // leave conference -----------------
-                        break;
-                    case R.id.item_dummy01:
                         break;
                     case R.id.item_delete:
                         // delete conference -----------------
-                        show_confirm_conference_del_dialog(v, f2);
+
+                        if ((f2.tox_conference_number > -1) && (f2.conference_active))
+                        {
+                            tox_conference_delete(f2.tox_conference_number);
+                            cache_confid_confnum.clear();
+                            update_savedata_file_wrapper(); // after deleteing a conference
+                        }
+
+                        Log.i(TAG, "onMenuItemClick:info:33");
+                        delete_conference_all_messages(f2.conference_identifier);
+                        delete_conference(f2.conference_identifier);
+                        Log.i(TAG, "onMenuItemClick:info:34");
+
+                        set_conference_inactive(f2.conference_identifier);
+
+                        Runnable myRunnable2 = new Runnable()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                try
+                                {
+                                    try
+                                    {
+                                        if (MainActivity.friend_list_fragment != null)
+                                        {
+                                            // reload friendlist
+                                            // TODO: only remove 1 item, don't clear all!! this can crash
+                                            MainActivity.friend_list_fragment.add_all_friends_clear(200);
+                                        }
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        e.printStackTrace();
+                                    }
+                                }
+                                catch (Exception e)
+                                {
+                                    e.printStackTrace();
+                                    Log.i(TAG, "onMenuItemClick:8:EE:" + e.getMessage());
+                                }
+                            }
+                        };
+
+                        // TODO: use own handler
+                        if (main_handler_s != null)
+                        {
+                            main_handler_s.post(myRunnable2);
+                        }
                         // delete conference -----------------
                         break;
                 }
@@ -390,134 +462,5 @@ public class ConferenceListHolder extends RecyclerView.ViewHolder implements Vie
 
         return true;
 
-    }
-
-    public void show_confirm_conference_leave_dialog(final View view, final ConferenceDB f2)
-    {
-        AlertDialog.Builder builder = new AlertDialog.Builder(view.getContext());
-        builder.setTitle("Leave Conference?");
-        builder.setMessage("Do you want to leave this Conference?");
-
-        builder.setNegativeButton("Cancel", null);
-        builder.setPositiveButton("Yes", new DialogInterface.OnClickListener()
-        {
-            @Override
-            public void onClick(DialogInterface dialog, int which)
-            {
-                if ((f2.tox_conference_number > -1) && (f2.conference_active))
-                {
-                    tox_conference_delete(f2.tox_conference_number);
-                    cache_confid_confnum.clear();
-                    update_savedata_file_wrapper(); // after deleteing a conference
-                }
-
-                set_conference_inactive(f2.conference_identifier);
-
-                Runnable myRunnable = new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        try
-                        {
-                            try
-                            {
-                                if (MainActivity.friend_list_fragment != null)
-                                {
-                                    // reload friendlist
-                                    // TODO: only remove 1 item, don't clear all!! this can crash
-                                    MainActivity.friend_list_fragment.add_all_friends_clear(200);
-                                }
-                            }
-                            catch (Exception e)
-                            {
-                                e.printStackTrace();
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            e.printStackTrace();
-                            Log.i(TAG, "onMenuItemClick:8:EE:" + e.getMessage());
-                        }
-                    }
-                };
-
-                // TODO: use own handler
-                if (main_handler_s != null)
-                {
-                    main_handler_s.post(myRunnable);
-                }
-            }
-        });
-
-        AlertDialog dialog = builder.create();
-        dialog.show();
-    }
-
-    public void show_confirm_conference_del_dialog(final View view, final ConferenceDB f2)
-    {
-        AlertDialog.Builder builder = new AlertDialog.Builder(view.getContext());
-        builder.setTitle("Delete Conference?");
-        builder.setMessage("Do you want to delete this Conference including all Messages?");
-
-        builder.setNegativeButton("Cancel", null);
-        builder.setPositiveButton("Yes", new DialogInterface.OnClickListener()
-        {
-            @Override
-            public void onClick(DialogInterface dialog, int which)
-            {
-                if ((f2.tox_conference_number > -1) && (f2.conference_active))
-                {
-                    tox_conference_delete(f2.tox_conference_number);
-                    cache_confid_confnum.clear();
-                    update_savedata_file_wrapper(); // after deleteing a conference
-                }
-
-                Log.i(TAG, "onMenuItemClick:info:33");
-                delete_conference_all_messages(f2.conference_identifier);
-                delete_conference(f2.conference_identifier);
-                Log.i(TAG, "onMenuItemClick:info:34");
-
-                set_conference_inactive(f2.conference_identifier);
-
-                Runnable myRunnable2 = new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        try
-                        {
-                            try
-                            {
-                                if (MainActivity.friend_list_fragment != null)
-                                {
-                                    // reload friendlist
-                                    // TODO: only remove 1 item, don't clear all!! this can crash
-                                    MainActivity.friend_list_fragment.add_all_friends_clear(200);
-                                }
-                            }
-                            catch (Exception e)
-                            {
-                                e.printStackTrace();
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            e.printStackTrace();
-                            Log.i(TAG, "onMenuItemClick:8:EE:" + e.getMessage());
-                        }
-                    }
-                };
-
-                // TODO: use own handler
-                if (main_handler_s != null)
-                {
-                    main_handler_s.post(myRunnable2);
-                }
-            }
-        });
-
-        AlertDialog dialog = builder.create();
-        dialog.show();
     }
 }

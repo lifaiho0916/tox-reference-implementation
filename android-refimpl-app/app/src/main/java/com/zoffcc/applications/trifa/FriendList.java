@@ -19,11 +19,11 @@
 
 package com.zoffcc.applications.trifa;
 
+import androidx.annotation.Nullable;
+
 import com.github.gfx.android.orma.annotation.Column;
 import com.github.gfx.android.orma.annotation.PrimaryKey;
 import com.github.gfx.android.orma.annotation.Table;
-
-import androidx.annotation.Nullable;
 
 @Table
 public class FriendList
@@ -68,10 +68,6 @@ public class FriendList
     @Nullable
     String avatar_filename = null;
 
-    @Column(indexed = true, defaultExpr = "", helpers = Column.Helpers.ALL)
-    @Nullable
-    String avatar_ftid_hex = null;
-
     @Column(indexed = true, defaultExpr = "false", helpers = Column.Helpers.ALL)
     @Nullable
     boolean avatar_update = false; // has avatar changed for this friend?
@@ -89,25 +85,9 @@ public class FriendList
     @Column(indexed = true, defaultExpr = "-1", helpers = Column.Helpers.ALL)
     long last_online_timestamp = -1L;
 
-    @Column(indexed = true, defaultExpr = "-1", helpers = Column.Helpers.ALL)
-    long last_online_timestamp_real = -1L;
-
-    @Column(indexed = true, defaultExpr = "-1", helpers = Column.Helpers.ALL)
-    long added_timestamp = -1L;
-
     @Column(indexed = true, defaultExpr = "false", helpers = Column.Helpers.ALL)
     @Nullable
     boolean is_relay = false;
-
-    @Column(indexed = true, defaultExpr = "", helpers = Column.Helpers.ALL)
-    @Nullable
-    String push_url;
-
-    @Column(indexed = true, defaultExpr = "0", helpers = Column.Helpers.ALL)
-    long capabilities = 0;
-
-    @Column(indexed = true, defaultExpr = "0", helpers = Column.Helpers.ALL)
-    long msgv3_capability = 0;
 
     static FriendList deep_copy(FriendList in)
     {
@@ -126,15 +106,9 @@ public class FriendList
         out.notification_silent = in.notification_silent;
         out.sort = in.sort;
         out.last_online_timestamp = in.last_online_timestamp;
-        out.last_online_timestamp_real = in.last_online_timestamp_real;
         out.alias_name = in.alias_name;
         out.is_relay = in.is_relay;
         out.avatar_update_timestamp = in.avatar_update_timestamp;
-        out.added_timestamp = in.added_timestamp;
-        out.push_url = in.push_url;
-        out.capabilities = in.capabilities;
-        out.msgv3_capability = in.msgv3_capability;
-        out.avatar_ftid_hex = in.avatar_ftid_hex;
 
         return out;
     }
@@ -150,8 +124,7 @@ public class FriendList
                    ", TOX_USER_STATUS=" + TOX_USER_STATUS + ", avatar_pathname=" + avatar_pathname +
                    ", avatar_filename=" + avatar_filename + ", notification_silent=" + notification_silent + ", sort=" +
                    sort + ", last_online_timestamp=" + last_online_timestamp + ", alias_name=" + alias_name +
-                   ", avatar_update=" + avatar_update + ", added_timestamp=" + added_timestamp + ", push_url=" +
-                   "*****" + ", capabilities=" + capabilities + ", avatar_ftid_hex=" + avatar_ftid_hex;
+                   ", avatar_update=" + avatar_update;
         }
         catch (Exception e)
         {

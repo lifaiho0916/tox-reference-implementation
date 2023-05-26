@@ -20,6 +20,7 @@
 package com.zoffcc.applications.trifa;
 
 import android.content.Context;
+import androidx.recyclerview.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -29,13 +30,6 @@ import com.l4digital.fastscroll.FastScroller;
 
 import java.util.Iterator;
 import java.util.List;
-
-import androidx.recyclerview.widget.RecyclerView;
-
-import static com.zoffcc.applications.trifa.CombinedFriendsAndConferences.COMBINED_IS_CONFERENCE;
-import static com.zoffcc.applications.trifa.CombinedFriendsAndConferences.COMBINED_IS_FRIEND;
-import static com.zoffcc.applications.trifa.CombinedFriendsAndConferences.COMBINED_IS_GROUP;
-import static com.zoffcc.applications.trifa.MainActivity.PREF__compact_friendlist;
 
 public class FriendlistAdapter extends RecyclerView.Adapter implements FastScroller.SectionIndexer
 {
@@ -61,41 +55,11 @@ public class FriendlistAdapter extends RecyclerView.Adapter implements FastScrol
         switch (viewType)
         {
             case CombinedFriendsAndConferences_model.ITEM_IS_FRIEND:
-                if (PREF__compact_friendlist)
-                {
-                    view = LayoutInflater.from(parent.getContext()).inflate(R.layout.friend_list_entry_compact, parent,
-                                                                            false);
-                }
-                else
-                {
-                    view = LayoutInflater.from(parent.getContext()).inflate(R.layout.friend_list_entry, parent, false);
-                }
+                view = LayoutInflater.from(parent.getContext()).inflate(R.layout.friend_list_entry, parent, false);
                 return new FriendListHolder(view, this.context);
 
-            case CombinedFriendsAndConferences_model.ITEM_IS_GROUP:
-                if (PREF__compact_friendlist)
-                {
-                    view = LayoutInflater.from(parent.getContext()).inflate(R.layout.friend_list_conf_entry_compact,
-                                                                            parent, false);
-                }
-                else
-                {
-                    view = LayoutInflater.from(parent.getContext()).inflate(R.layout.friend_list_conf_entry, parent,
-                                                                            false);
-                }
-                return new GroupListHolder(view, this.context);
-
             case CombinedFriendsAndConferences_model.ITEM_IS_CONFERENCE:
-                if (PREF__compact_friendlist)
-                {
-                    view = LayoutInflater.from(parent.getContext()).inflate(R.layout.friend_list_conf_entry_compact,
-                                                                            parent, false);
-                }
-                else
-                {
-                    view = LayoutInflater.from(parent.getContext()).inflate(R.layout.friend_list_conf_entry, parent,
-                                                                            false);
-                }
+                view = LayoutInflater.from(parent.getContext()).inflate(R.layout.friend_list_conf_entry, parent, false);
                 return new ConferenceListHolder(view, this.context);
         }
 
@@ -109,13 +73,9 @@ public class FriendlistAdapter extends RecyclerView.Adapter implements FastScrol
     {
         CombinedFriendsAndConferences my_item = this.friendlistitems.get(position);
 
-        if (my_item.is_friend == COMBINED_IS_FRIEND)
+        if (my_item.is_friend)
         {
             return CombinedFriendsAndConferences_model.ITEM_IS_FRIEND;
-        }
-        else if (my_item.is_friend == COMBINED_IS_GROUP)
-        {
-            return CombinedFriendsAndConferences_model.ITEM_IS_GROUP;
         }
         else // is conference
         {
@@ -145,10 +105,6 @@ public class FriendlistAdapter extends RecyclerView.Adapter implements FastScrol
                 case CombinedFriendsAndConferences_model.ITEM_IS_CONFERENCE:
                     // Log.i(TAG, "onBindViewHolder:ITEM_IS_CONFERENCE");
                     ((ConferenceListHolder) holder).bindFriendList(fl2.conference_item);
-                    break;
-                case CombinedFriendsAndConferences_model.ITEM_IS_GROUP:
-                    // Log.i(TAG, "onBindViewHolder:ITEM_IS_GROUP");
-                    ((GroupListHolder) holder).bindFriendList(fl2.group_item);
                     break;
             }
         }
@@ -197,7 +153,7 @@ public class FriendlistAdapter extends RecyclerView.Adapter implements FastScrol
         this.notifyDataSetChanged();
     }
 
-    public boolean update_item(CombinedFriendsAndConferences new_item_combined, int is_friend)
+    public boolean update_item(CombinedFriendsAndConferences new_item_combined, boolean is_friend)
     {
         // Log.i(TAG, "update_item:" + new_item);
         boolean found_item = false;
@@ -209,9 +165,9 @@ public class FriendlistAdapter extends RecyclerView.Adapter implements FastScrol
             {
                 CombinedFriendsAndConferences f_combined = (CombinedFriendsAndConferences) it.next();
 
-                if (is_friend == COMBINED_IS_FRIEND)
+                if (is_friend)
                 {
-                    if (f_combined.is_friend == COMBINED_IS_FRIEND)
+                    if (f_combined.is_friend)
                     {
                         FriendList f = f_combined.friend_item;
                         FriendList new_item = new_item_combined.friend_item;
@@ -226,26 +182,9 @@ public class FriendlistAdapter extends RecyclerView.Adapter implements FastScrol
                         }
                     }
                 }
-                else if (is_friend == COMBINED_IS_GROUP)
-                {
-                    if (f_combined.is_friend == COMBINED_IS_GROUP)
-                    {
-                        GroupDB f = f_combined.group_item;
-                        GroupDB new_item = new_item_combined.group_item;
-
-                        if (f.group_identifier.compareTo(new_item.group_identifier) == 0)
-                        {
-                            found_item = true;
-                            int pos = this.friendlistitems.indexOf(f_combined);
-                            this.friendlistitems.set(pos, new_item_combined);
-                            this.notifyItemChanged(pos);
-                            break;
-                        }
-                    }
-                }
                 else // is conference
                 {
-                    if (f_combined.is_friend == COMBINED_IS_CONFERENCE)
+                    if (!f_combined.is_friend)
                     {
                         ConferenceDB f = f_combined.conference_item;
                         ConferenceDB new_item = new_item_combined.conference_item;

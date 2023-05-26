@@ -54,7 +54,7 @@ public class HelperMsgNotification
 
     /*
      * action: NOTIFICATION_EDIT_ACTION
-     * key: either a friend pubkey or a conference id or a group id, both as hex string representation
+     * key: either a friend pubkey or a conference id, both as uppercase hex string representation
      */
     static synchronized void change_msg_notification(int action, String key)
     {
@@ -157,7 +157,7 @@ public class HelperMsgNotification
                                     "com.zoffcc.applications.trifa." + (long) (Math.random() * 100000));
                             notificationIntent.putExtra("CLEAR_NEW_MESSAGE_NOTIFICATION", "1");
                             PendingIntent pendingIntent = PendingIntent.getActivity(context_s, 0, notificationIntent,
-                                                                                    PendingIntent.FLAG_IMMUTABLE);
+                                                                                    0);
                             // -- notification ------------------
                             // -- notification -----------------
                             NotificationCompat.Builder b;
@@ -207,7 +207,8 @@ public class HelperMsgNotification
                                 b.setVibrate(vibrate_pattern);
                             }
 
-                            b.setContentTitle("TRIfA");
+                            b.setContentTitle(
+                                    context_s.getString(R.string.MainActivity_notification_new_message_title));
                             b.setAutoCancel(true);
                             b.setContentText(context_s.getString(R.string.MainActivity_notification_new_message2));
                             Notification notification3 = b.build();

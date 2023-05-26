@@ -8,7 +8,6 @@
     android:orientation="vertical"
     tools:context="com.zoffcc.applications.trifa.CallingActivity">
 
-
     <!--android:background="#0277bd"-->
 
 
@@ -37,8 +36,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="3dp"
                 android:layout_marginLeft="0dp"
-                android:background="#04b431"
                 android:elevation="25dp"
+                android:background="#04b431"
                 android:orientation="vertical">
 
             </LinearLayout>
@@ -258,55 +257,6 @@
                 </LinearLayout>
             </FrameLayout>
 
-            <FrameLayout
-                android:id="@+id/video_box_aec"
-                android:layout_width="110dp"
-                android:layout_height="50dp"
-                android:layout_gravity="center|left"
-                android:layout_marginLeft="10dp"
-                android:layout_marginTop="150dp"
-                android:background="@null"
-                android:elevation="2dp">
-
-                <Button
-                    android:id="@+id/video_box_aec_button"
-                    android:layout_width="70dp"
-                    android:layout_height="50dp"
-                    android:background="#300000FF"
-                    android:elevation="8dp"
-                    android:gravity="center"
-                    android:text="- AEC -"
-                    android:textColor="#4046BD46"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-
-            </FrameLayout>
-
-            <FrameLayout
-                android:id="@+id/video_speaker_aec"
-                android:layout_width="110dp"
-                android:layout_height="50dp"
-                android:layout_gravity="center|left"
-                android:layout_marginLeft="10dp"
-                android:layout_marginTop="210dp"
-                android:background="@null"
-                android:elevation="2dp">
-
-                <Button
-                    android:id="@+id/video_box_speaker_button"
-                    android:layout_width="100dp"
-                    android:layout_height="50dp"
-                    android:background="#300000FF"
-                    android:elevation="8dp"
-                    android:gravity="center"
-                    android:text="- Speaker -"
-                    android:textColor="#4046BD46"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-
-            </FrameLayout>
-
-
             <LinearLayout
                 android:layout_width="5dp"
                 android:layout_height="match_parent"
@@ -381,26 +331,6 @@
                     android:layout_gravity="center"
                     android:background="@drawable/border_001"
                     android:padding="5dp">
-
-                    <androidx.camera.view.PreviewView
-                        android:id="@+id/camera_preview_view"
-                        android:layout_width="120dp"
-                        android:layout_height="160dp"
-                        android:layout_gravity="center"
-                        android:layout_margin="0dp"
-                        android:elevation="12dp"
-                        android:gravity="center"
-                        android:padding="0dp" />
-
-                    <com.zoffcc.applications.trifa.CameraDrawingOverlay
-                        android:id="@+id/camera_drawing_overlay"
-                        android:layout_width="120dp"
-                        android:layout_height="160dp"
-                        android:layout_gravity="center"
-                        android:layout_margin="0dp"
-                        android:elevation="13dp"
-                        android:gravity="center"
-                        android:padding="0dp" />
 
                     <com.zoffcc.applications.trifa.CameraSurfacePreview
                         android:id="@+id/camera_surfaceview"

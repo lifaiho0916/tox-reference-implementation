@@ -88,19 +88,6 @@ public class TrifaSetPatternActivity extends SetPatternActivity
         }
     }
 
-    public static String filter_out_specials_from_filepath_stricter(String path)
-    {
-        try
-        {
-            return path.replaceAll("[^a-zA-Z0-9_.]", "_");
-        }
-        catch (Exception e)
-        {
-            // e.printStackTrace();
-            return "___";
-        }
-    }
-
     public static String filter_out_specials(String in)
     {
         try

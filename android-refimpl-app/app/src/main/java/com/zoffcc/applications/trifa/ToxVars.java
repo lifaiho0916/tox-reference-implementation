@@ -35,135 +35,15 @@ public class ToxVars
     public static final int TOX_SECRET_KEY_SIZE = 32;
     public static final int TOX_NOSPAM_SIZE = sizeof_uint32_t;
     public static final int TOX_ADDRESS_SIZE = TOX_PUBLIC_KEY_SIZE + TOX_NOSPAM_SIZE + sizeof_uint16_t;
-    public static final int TOX_MAX_MESSAGE_LENGTH = 1372;
-    public static final int CRYPTO_MAC_SIZE = 16;
-    public static final int CRYPTO_DATA_PACKET_MIN_SIZE = (1 + 2 + 4 + 4) + CRYPTO_MAC_SIZE;
-    public static final int MAX_CRYPTO_PACKET_SIZE = 1400;
-    public static final int MAX_CRYPTO_DATA_SIZE = (MAX_CRYPTO_PACKET_SIZE - CRYPTO_DATA_PACKET_MIN_SIZE);
-    public static final int MAX_FILE_DATA_SIZE = (MAX_CRYPTO_DATA_SIZE - 2); // == 1371 bytes!
+    // public static final int TOX_MAX_MESSAGE_LENGTH = 1372; // -> tox_max_message_length [DONE]
     public static final int TOX_HASH_LENGTH = 32;
     public static final int TOX_FILE_ID_LENGTH = 32;
     public static final int TOX_MAX_FILENAME_LENGTH = 255;
-    //
-    // -- Group chat numeric constants
-    public static final int TOX_GROUP_MAX_TOPIC_LENGTH = 512;
-    public static final int TOX_GROUP_MAX_PART_LENGTH = 128;
-    public static final int TOX_GROUP_MAX_GROUP_NAME_LENGTH = 48;
-    public static final int TOX_GROUP_MAX_PASSWORD_SIZE = 32;
-    public static final int TOX_GROUP_CHAT_ID_SIZE = 32;
-    public static final int TOX_GROUP_PEER_PUBLIC_KEY_SIZE = 32;
-    // -- Group chat numeric constants
-    //
-    public static final int TOX_MSGV3_MSGID_LENGTH = 32;
-    public static final int TOX_MSGV3_TIMESTAMP_LENGTH = 4;
-    public static final int TOX_MSGV3_GUARD = 2;
-    public static final int TOX_MSGV3_MAX_MESSAGE_LENGTH = (TOX_MAX_MESSAGE_LENGTH - TOX_MSGV3_MSGID_LENGTH -
-                                                            TOX_MSGV3_TIMESTAMP_LENGTH - TOX_MSGV3_GUARD);
-
-    public static final int TOX_MAX_NGC_FILESIZE = 36701;
-    public static final int TOX_MAX_NGC_FILE_AND_HEADER_SIZE = 37000;
     // TODO: get these with the appropriate JNI functions!
     // ------ global defines ------
     // ------ global defines ------
     // ------ global defines ------
 
-    public static class TOX_CAPABILITY_DECODE_RESULT
-    {
-        boolean basic = true;
-        boolean capabilities = false;
-        boolean msgv2 = false;
-        boolean toxav_h264 = false;
-        boolean msgv3 = false;
-        boolean ftv2 = false;
-        boolean next_implementation = false;
-    }
-
-    public static long TOX_CAPABILITY_BASIC = 0;
-    public static long TOX_CAPABILITY_CAPABILITIES = 1 << 0;
-    public static long TOX_CAPABILITY_MSGV2 = 1 << 1;
-    public static long TOX_CAPABILITY_TOXAV_H264 = 1 << 2;
-    public static long TOX_CAPABILITY_MSGV3 = 1 << 3;
-    public static long TOX_CAPABILITY_FTV2 = 1 << 4;
-    public static long TOX_CAPABILITY_NEXT_IMPLEMENTATION = (1L << 63L);
-
-    public static TOX_CAPABILITY_DECODE_RESULT TOX_CAPABILITY_DECODE(long capabilites_encoded)
-    {
-        TOX_CAPABILITY_DECODE_RESULT res = new TOX_CAPABILITY_DECODE_RESULT();
-
-        if ((capabilites_encoded & TOX_CAPABILITY_CAPABILITIES) != 0)
-        {
-            res.capabilities = true;
-        }
-
-        if ((capabilites_encoded & TOX_CAPABILITY_MSGV2) != 0)
-        {
-            res.msgv2 = true;
-        }
-
-        if ((capabilites_encoded & TOX_CAPABILITY_TOXAV_H264) != 0)
-        {
-            res.toxav_h264 = true;
-        }
-
-        if ((capabilites_encoded & TOX_CAPABILITY_MSGV3) != 0)
-        {
-            res.msgv3 = true;
-        }
-
-        if ((capabilites_encoded & TOX_CAPABILITY_FTV2) != 0)
-        {
-            res.ftv2 = true;
-        }
-
-        if ((capabilites_encoded & TOX_CAPABILITY_NEXT_IMPLEMENTATION) != 0)
-        {
-            res.next_implementation = true;
-        }
-
-        return res;
-    }
-
-    public static String TOX_CAPABILITY_DECODE_TO_STRING(TOX_CAPABILITY_DECODE_RESULT in)
-    {
-        String res = "";
-
-        if (in.basic)
-        {
-            res = res + " BASIC ";
-        }
-
-        if (in.capabilities)
-        {
-            res = res + " CAPABILITIES ";
-        }
-
-        if (in.msgv2)
-        {
-            res = res + " MSGV2 ";
-        }
-
-        if (in.toxav_h264)
-        {
-            res = res + " TOXAV_H264 ";
-        }
-
-        if (in.msgv3)
-        {
-            res = res + " MSGV3 ";
-        }
-
-        if (in.ftv2)
-        {
-            res = res + " FTV2 ";
-        }
-
-        if (in.next_implementation)
-        {
-            res = res + " NEXT_IMPLEMENTATION ";
-        }
-
-        return res;
-    }
 
     // --------- TOXAV ------------
     // --------- TOXAV ------------
@@ -587,25 +467,14 @@ public class ToxVars
         /**
          * Normal text message. Similar to PRIVMSG on IRC.
          */
-        TOX_MESSAGE_TYPE_NORMAL(0),
+        TOX_MESSAGE_TYPE_NORMAL,
 
         /**
          * A message describing an user action. This is similar to /me (CTCP ACTION)
          * on IRC.
          */
-        TOX_MESSAGE_TYPE_ACTION(1),
+        TOX_MESSAGE_TYPE_ACTION,
 
-        /**
-         * A high level ACK for MSG ID (MSG V3 functionality)
-         */
-        TOX_MESSAGE_TYPE_HIGH_LEVEL_ACK(2);
-
-        public int value;
-
-        private TOX_MESSAGE_TYPE(int value)
-        {
-            this.value = value;
-        }
     }
 
 
@@ -1000,7 +869,7 @@ public class ToxVars
          * has no avatar.
          */
         TOX_FILE_KIND_AVATAR(1), TOX_FILE_KIND_MESSAGEV2_SEND(2), TOX_FILE_KIND_MESSAGEV2_ANSWER(
-            3), TOX_FILE_KIND_MESSAGEV2_ALTER(4), TOX_FILE_KIND_MESSAGEV2_SYNC(5), TOX_FILE_KIND_FTV2(16);
+            3), TOX_FILE_KIND_MESSAGEV2_ALTER(4), TOX_FILE_KIND_MESSAGEV2_SYNC(5);
 
         public int value;
 
@@ -1034,10 +903,6 @@ public class ToxVars
             else if (value == TOX_FILE_KIND_MESSAGEV2_SYNC.value)
             {
                 return "TOX_FILE_KIND_MESSAGEV2_SYNC";
-            }
-            else if (value == TOX_FILE_KIND_FTV2.value)
-            {
-                return "TOX_FILE_KIND_FTV2";
             }
             return "UNKNOWN";
         }
@@ -1545,7 +1410,7 @@ public class ToxVars
             7), TOXAV_ENCODER_CODEC_USED(9), TOXAV_ENCODER_KF_METHOD(10), TOXAV_ENCODER_VIDEO_BITRATE_AUTOSET(
             11), TOXAV_ENCODER_VIDEO_MAX_BITRATE(12), TOXAV_DECODER_VIDEO_BUFFER_MS(
             13), TOXAV_CLIENT_VIDEO_CAPTURE_DELAY_MS(14), TOXAV_CLIENT_INPUT_VIDEO_ORIENTATION(
-            15), TOXAV_DECODER_VIDEO_ADD_DELAY_MS(16), TOXAV_ENCODER_VIDEO_MIN_BITRATE(17);
+            15), TOXAV_DECODER_VIDEO_ADD_DELAY_MS(16);
 
         public int value;
 
@@ -1562,7 +1427,7 @@ public class ToxVars
             3), TOXAV_CALL_COMM_ENCODER_IN_USE_H264_OMX_PI(6), TOXAV_CALL_COMM_DECODER_CURRENT_BITRATE(
             4), TOXAV_CALL_COMM_ENCODER_CURRENT_BITRATE(5), TOXAV_CALL_COMM_NETWORK_ROUND_TRIP_MS(
             7), TOXAV_CALL_COMM_PLAY_DELAY(8), TOXAV_CALL_COMM_PLAY_BUFFER_ENTRIES(9), TOXAV_CALL_COMM_INCOMING_FPS(
-            10), TOXAV_CALL_COMM_REMOTE_RECORD_DELAY(11);
+            10), TOXAV_CALL_COMM_REMOTE_RECORD_DELAY(11);;
 
         public int value;
 
@@ -1571,195 +1436,6 @@ public class ToxVars
             this.value = value;
         }
     }
-
-    public static enum Tox_Group_Exit_Type
-    {
-        /**
-         * The peer has quit the group.
-         */
-        TOX_GROUP_EXIT_TYPE_QUIT(0),
-
-        /**
-         * Your connection with this peer has timed out.
-         */
-        TOX_GROUP_EXIT_TYPE_TIMEOUT(1),
-
-        /**
-         * Your connection with this peer has been severed.
-         */
-        TOX_GROUP_EXIT_TYPE_DISCONNECTED(2),
-
-        /**
-         * Your connection with all peers has been severed. This will occur when you are kicked from
-         * a group, rejoin a group, or manually disconnect from a group.
-         */
-        TOX_GROUP_EXIT_TYPE_SELF_DISCONNECTED(3),
-
-        /**
-         * The peer has been kicked.
-         */
-        TOX_GROUP_EXIT_TYPE_KICK(4),
-
-        /**
-         * The peer provided invalid group sync information.
-         */
-        TOX_GROUP_EXIT_TYPE_SYNC_ERROR(5);
-
-        public int value;
-
-        private Tox_Group_Exit_Type(int value)
-        {
-            this.value = value;
-        }
-
-        public static String value_str(int value)
-        {
-            if (value == TOX_GROUP_EXIT_TYPE_QUIT.value)
-            {
-                return "TOX_GROUP_EXIT_TYPE_QUIT";
-            }
-            else if (value == TOX_GROUP_EXIT_TYPE_TIMEOUT.value)
-            {
-                return "TOX_GROUP_EXIT_TYPE_TIMEOUT";
-            }
-            else if (value == TOX_GROUP_EXIT_TYPE_DISCONNECTED.value)
-            {
-                return "TOX_GROUP_EXIT_TYPE_DISCONNECTED";
-            }
-            else if (value == TOX_GROUP_EXIT_TYPE_SELF_DISCONNECTED.value)
-            {
-                return "TOX_GROUP_EXIT_TYPE_SELF_DISCONNECTED";
-            }
-            else if (value == TOX_GROUP_EXIT_TYPE_KICK.value)
-            {
-                return "TOX_GROUP_EXIT_TYPE_KICK";
-            }
-            else if (value == TOX_GROUP_EXIT_TYPE_SYNC_ERROR.value)
-            {
-                return "TOX_GROUP_EXIT_TYPE_SYNC_ERROR";
-            }
-            return "UNKNOWN";
-        }
-    }
-
-    public static enum TOX_GROUP_PRIVACY_STATE
-    {
-
-        /**
-         * The group is considered to be public. Anyone may join the group using the Chat ID.
-         * <p>
-         * If the group is in this state, even if the Chat ID is never explicitly shared
-         * with someone outside of the group, information including the Chat ID, IP addresses,
-         * and peer ID's (but not Tox ID's) is visible to anyone with access to a node
-         * storing a DHT entry for the given group.
-         */
-        TOX_GROUP_PRIVACY_STATE_PUBLIC(0),
-
-        /**
-         * The group is considered to be private. The only way to join the group is by having
-         * someone in your contact list send you an invite.
-         * <p>
-         * If the group is in this state, no group information (mentioned above) is present in the DHT;
-         * the DHT is not used for any purpose at all. If a public group is set to private,
-         * all DHT information related to the group will expire shortly.
-         */
-        TOX_GROUP_PRIVACY_STATE_PRIVATE(1);
-
-        public int value;
-
-        private TOX_GROUP_PRIVACY_STATE(int value)
-        {
-            this.value = value;
-        }
-
-        public static String value_str(int value)
-        {
-            if (value == TOX_GROUP_PRIVACY_STATE_PUBLIC.value)
-            {
-                return "TOX_GROUP_PRIVACY_STATE_PUBLIC";
-            }
-            else if (value == TOX_GROUP_PRIVACY_STATE_PRIVATE.value)
-            {
-                return "TOX_GROUP_PRIVACY_STATE_PRIVATE";
-            }
-            return "UNKNOWN";
-        }
-    }
-
-    public static enum Tox_Group_Role
-    {
-        /**
-         * May kick all other peers as well as set their role to anything (except founder).
-         * Founders may also set the group password, toggle the privacy state, and set the peer limit.
-         */
-        TOX_GROUP_ROLE_FOUNDER(0),
-
-        /**
-         * May kick and set the user and observer roles for peers below this role.
-         * May also set the group topic.
-         */
-        TOX_GROUP_ROLE_MODERATOR(1),
-
-        /**
-         * May communicate with other peers normally.
-         */
-        TOX_GROUP_ROLE_USER(2),
-
-        /**
-         * May observe the group and ignore peers; may not communicate with other peers or with the group.
-         */
-        TOX_GROUP_ROLE_OBSERVER(3);
-
-        public int value;
-
-        private Tox_Group_Role(int value)
-        {
-            this.value = value;
-        }
-
-        public static String value_str(int value)
-        {
-            if (value == TOX_GROUP_ROLE_FOUNDER.value)
-            {
-                return "TOX_GROUP_ROLE_FOUNDER";
-            }
-            else if (value == TOX_GROUP_ROLE_MODERATOR.value)
-            {
-                return "TOX_GROUP_ROLE_MODERATOR";
-            }
-            else if (value == TOX_GROUP_ROLE_USER.value)
-            {
-                return "TOX_GROUP_ROLE_USER";
-            }
-            else if (value == TOX_GROUP_ROLE_OBSERVER.value)
-            {
-                return "TOX_GROUP_ROLE_OBSERVER";
-            }
-            return "UNKNOWN";
-        }
-
-        public static String value_char(int value)
-        {
-            if (value == TOX_GROUP_ROLE_FOUNDER.value)
-            {
-                return "F";
-            }
-            else if (value == TOX_GROUP_ROLE_MODERATOR.value)
-            {
-                return "M";
-            }
-            else if (value == TOX_GROUP_ROLE_USER.value)
-            {
-                return "u";
-            }
-            else if (value == TOX_GROUP_ROLE_OBSERVER.value)
-            {
-                return "_";
-            }
-            return "x";
-        }
-    }
-
     // ---------- TOX -------------
     // ---------- TOX -------------
     // ---------- TOX -------------

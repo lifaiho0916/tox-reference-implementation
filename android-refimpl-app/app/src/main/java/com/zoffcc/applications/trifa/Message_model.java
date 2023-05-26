@@ -39,8 +39,5 @@ public class Message_model
     public static final int FILE_OUTGOING_STATE_PAUSE_HAS_ACCEPTED = 4004;
     public static final int FILE_OUTGOING_STATE_RESUME = 4005;
 
-    public static final int PAGING_OLDER = 8001;
-    public static final int PAGING_NEWER = 8002;
-
     public static final int ERROR_UNKNOWN = 9999;
 }

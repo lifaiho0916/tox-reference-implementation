@@ -20,11 +20,10 @@
 package com.zoffcc.applications.trifa;
 
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
-import android.net.Uri;
+import androidx.recyclerview.widget.RecyclerView;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -44,33 +43,26 @@ import com.mikepenz.google_material_typeface_library.GoogleMaterial;
 import com.mikepenz.iconics.IconicsDrawable;
 
 import java.net.URLConnection;
+import java.nio.ByteBuffer;
 
-import androidx.appcompat.app.AlertDialog;
-import androidx.core.content.ContextCompat;
-import androidx.documentfile.provider.DocumentFile;
-import androidx.recyclerview.widget.RecyclerView;
-
-import static com.zoffcc.applications.trifa.HelperFiletransfer.get_filetransfer_filenum_from_id;
-import static com.zoffcc.applications.trifa.HelperFiletransfer.remove_ft_from_cache;
-import static com.zoffcc.applications.trifa.HelperFiletransfer.set_filetransfer_state_from_id;
-import static com.zoffcc.applications.trifa.HelperFriend.tox_friend_by_public_key__wrapper;
+import static com.zoffcc.applications.trifa.MainActivity.VFS_ENCRYPT;
 import static com.zoffcc.applications.trifa.HelperGeneric.dp2px;
+import static com.zoffcc.applications.trifa.HelperFiletransfer.get_filetransfer_filenum_from_id;
 import static com.zoffcc.applications.trifa.HelperGeneric.get_vfs_image_filename_own_avatar;
 import static com.zoffcc.applications.trifa.HelperGeneric.long_date_time_format;
-import static com.zoffcc.applications.trifa.HelperMessage.set_message_queueing_from_id;
+import static com.zoffcc.applications.trifa.HelperFiletransfer.set_filetransfer_start_sending_from_id;
+import static com.zoffcc.applications.trifa.HelperFiletransfer.set_filetransfer_state_from_id;
+import static com.zoffcc.applications.trifa.HelperMessage.set_message_start_sending_from_id;
 import static com.zoffcc.applications.trifa.HelperMessage.set_message_state_from_id;
-import static com.zoffcc.applications.trifa.HelperMessage.update_single_message_from_messge_id;
-import static com.zoffcc.applications.trifa.MainActivity.VFS_ENCRYPT;
 import static com.zoffcc.applications.trifa.MainActivity.tox_file_control;
+import static com.zoffcc.applications.trifa.MainActivity.tox_file_send;
+import static com.zoffcc.applications.trifa.HelperFriend.tox_friend_by_public_key__wrapper;
+import static com.zoffcc.applications.trifa.HelperFiletransfer.update_filetransfer_db_full;
+import static com.zoffcc.applications.trifa.HelperMessage.update_single_message_from_messge_id;
 import static com.zoffcc.applications.trifa.ToxVars.TOX_FILE_CONTROL.TOX_FILE_CONTROL_CANCEL;
-import static com.zoffcc.applications.trifa.ToxVars.TOX_FILE_KIND.TOX_FILE_KIND_FTV2;
+import static com.zoffcc.applications.trifa.ToxVars.TOX_FILE_ID_LENGTH;
+import static com.zoffcc.applications.trifa.TrifaToxService.orma;
 
-/*
- *
- * HINT: this is the START POINT for outgoing FT
- * when nothing has started yet, but a file was selected to send
- *
- */
 public class MessageListHolder_file_outgoing_state_pause_not_yet_started extends RecyclerView.ViewHolder implements View.OnClickListener, View.OnLongClickListener
 {
     private static final String TAG = "trifa.MessageListHldr01";
@@ -89,7 +81,6 @@ public class MessageListHolder_file_outgoing_state_pause_not_yet_started extends
     TextView date_time;
     TextView message_text_date_string;
     ViewGroup message_text_date;
-    ViewGroup rounded_bg_container;
 
     public MessageListHolder_file_outgoing_state_pause_not_yet_started(View itemView, Context c)
     {
@@ -105,7 +96,6 @@ public class MessageListHolder_file_outgoing_state_pause_not_yet_started extends
         ft_preview_container = (ViewGroup) itemView.findViewById(R.id.ft_preview_container);
         ft_buttons_container = (ViewGroup) itemView.findViewById(R.id.ft_buttons_container);
         ft_preview_image = (ImageButton) itemView.findViewById(R.id.ft_preview_image);
-        rounded_bg_container = (ViewGroup) itemView.findViewById(R.id.ft_outgoing_rounded_bg);
         textView = (EmojiTextViewLinks) itemView.findViewById(R.id.m_text);
         imageView = (ImageView) itemView.findViewById(R.id.m_icon);
         img_avatar = (de.hdodenhof.circleimageview.CircleImageView) itemView.findViewById(R.id.img_avatar);
@@ -129,8 +119,7 @@ public class MessageListHolder_file_outgoing_state_pause_not_yet_started extends
 
         final Message message = m;
 
-        textView.addAutoLinkMode(AutoLinkMode.MODE_URL, AutoLinkMode.MODE_EMAIL, AutoLinkMode.MODE_HASHTAG,
-                                 AutoLinkMode.MODE_MENTION);
+        textView.addAutoLinkMode(AutoLinkMode.MODE_URL, AutoLinkMode.MODE_EMAIL, AutoLinkMode.MODE_HASHTAG, AutoLinkMode.MODE_MENTION);
 
         ft_progressbar.setVisibility(View.GONE);
         ft_buttons_container.setVisibility(View.VISIBLE);
@@ -138,37 +127,6 @@ public class MessageListHolder_file_outgoing_state_pause_not_yet_started extends
         ft_preview_image.setVisibility(View.VISIBLE);
 
         final Message message2 = message;
-
-        int drawable_id = R.drawable.rounded_blue_bg_with_border;
-        try
-        {
-            if (m.filetransfer_kind == TOX_FILE_KIND_FTV2.value)
-            {
-                drawable_id = R.drawable.rounded_blue_bg;
-            }
-
-            final int sdk = android.os.Build.VERSION.SDK_INT;
-            if (sdk < android.os.Build.VERSION_CODES.JELLY_BEAN)
-            {
-                rounded_bg_container.setBackgroundDrawable(ContextCompat.getDrawable(context, drawable_id));
-            }
-            else
-            {
-                rounded_bg_container.setBackground(ContextCompat.getDrawable(context, drawable_id));
-            }
-        }
-        catch (Exception e)
-        {
-            final int sdk = android.os.Build.VERSION.SDK_INT;
-            if (sdk < android.os.Build.VERSION_CODES.JELLY_BEAN)
-            {
-                rounded_bg_container.setBackgroundDrawable(ContextCompat.getDrawable(context, drawable_id));
-            }
-            else
-            {
-                rounded_bg_container.setBackground(ContextCompat.getDrawable(context, drawable_id));
-            }
-        }
 
         // --------- message date header (show only if different from previous message) ---------
         // --------- message date header (show only if different from previous message) ---------
@@ -183,17 +141,14 @@ public class MessageListHolder_file_outgoing_state_pause_not_yet_started extends
                 {
                     if (my_position < 1)
                     {
-                        message_text_date_string.setText(
-                                MainActivity.message_list_fragment.adapter.getDateHeaderText(my_position));
+                        message_text_date_string.setText(MainActivity.message_list_fragment.adapter.getDateHeaderText(my_position));
                         message_text_date.setVisibility(View.VISIBLE);
                     }
                     else
                     {
-                        if (!MainActivity.message_list_fragment.adapter.getDateHeaderText(my_position).equals(
-                                MainActivity.message_list_fragment.adapter.getDateHeaderText(my_position - 1)))
+                        if (!MainActivity.message_list_fragment.adapter.getDateHeaderText(my_position).equals(MainActivity.message_list_fragment.adapter.getDateHeaderText(my_position - 1)))
                         {
-                            message_text_date_string.setText(
-                                    MainActivity.message_list_fragment.adapter.getDateHeaderText(my_position));
+                            message_text_date_string.setText(MainActivity.message_list_fragment.adapter.getDateHeaderText(my_position));
                             message_text_date.setVisibility(View.VISIBLE);
                         }
                     }
@@ -220,33 +175,54 @@ public class MessageListHolder_file_outgoing_state_pause_not_yet_started extends
         button_ok.setVisibility(View.VISIBLE);
         button_cancel.setVisibility(View.VISIBLE);
 
-        HelperGeneric.fill_own_avatar_icon(context, img_avatar);
+        final Drawable d_lock = new IconicsDrawable(context).icon(FontAwesome.Icon.faw_lock).color(context.getResources().getColor(R.color.colorPrimaryDark)).sizeDp(50);
+        img_avatar.setImageDrawable(d_lock);
 
-        if (message.ft_outgoing_queued)
+        try
         {
-            textView.setAutoLinkText("" + message.text + "\n\nqueued ...");
+            if (VFS_ENCRYPT)
+            {
+                String fname = get_vfs_image_filename_own_avatar();
+
+                info.guardianproject.iocipher.File f1 = null;
+                try
+                {
+                    f1 = new info.guardianproject.iocipher.File(fname);
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+
+                if ((f1 != null) && (fname != null))
+                {
+                    if (f1.length() > 0)
+                    {
+                        final RequestOptions glide_options = new RequestOptions().fitCenter();
+                        GlideApp.
+                                with(context).
+                                load(f1).
+                                diskCacheStrategy(DiskCacheStrategy.RESOURCE).
+                                skipMemoryCache(false).
+                                apply(glide_options).
+                                into(img_avatar);
+                    }
+                }
+            }
         }
-        else
+        catch (Exception e)
         {
-            textView.setAutoLinkText("" + message.text + "\n\nSend this file?");
+            e.printStackTrace();
         }
+
+
+        textView.setAutoLinkText("" + message.text + "\n\nSend this file?");
 
         boolean is_image = false;
         try
         {
-            String mimeType = null;
-            if (message.storage_frame_work)
-            {
-                Uri uri = Uri.parse(message.filename_fullpath);
-                DocumentFile documentFile = DocumentFile.fromSingleUri(context, uri);
-                String fileName = documentFile.getName();
-                mimeType = URLConnection.guessContentTypeFromName(fileName.toLowerCase());
-            }
-            else
-            {
-                mimeType = URLConnection.guessContentTypeFromName(message.filename_fullpath.toLowerCase());
-            }
-            if (mimeType.startsWith("image/"))
+            String mimeType = URLConnection.guessContentTypeFromName(message.filename_fullpath.toLowerCase());
+            if (mimeType.startsWith("image"))
             {
                 is_image = true;
             }
@@ -256,14 +232,6 @@ public class MessageListHolder_file_outgoing_state_pause_not_yet_started extends
             e.printStackTrace();
         }
 
-        if (message.ft_outgoing_queued)
-        {
-            button_ok.setVisibility(View.GONE);
-        }
-        else
-        {
-            button_ok.setVisibility(View.VISIBLE);
-        }
 
         button_ok.setOnTouchListener(new View.OnTouchListener()
         {
@@ -276,14 +244,70 @@ public class MessageListHolder_file_outgoing_state_pause_not_yet_started extends
                     {
                         Log.i(TAG, "MM2MM:7:mid=" + message.id + " ftid:" + message.filetransfer_id);
 
-                        // queue FT
-                        set_message_queueing_from_id(message.id, true);
+                        // accept FT
+                        set_message_start_sending_from_id(message.id);
+                        set_filetransfer_start_sending_from_id(message.filetransfer_id);
+
                         button_ok.setVisibility(View.GONE);
 
                         // update message view
                         update_single_message_from_messge_id(message.id, true);
 
-                        Log.i(TAG, "button_ok:OnTouch:009");
+                        Filetransfer ft = orma.selectFromFiletransfer().
+                                idEq(message.filetransfer_id).
+                                orderByIdDesc().get(0);
+
+                        Log.i(TAG, "MM2MM:8:ft.filesize=" + ft.filesize + " ftid=" + ft.id + " ft.mid=" + ft.message_id + " mid=" + message.id);
+
+                        // ------ DEBUG ------
+                        Log.i(TAG, "MM2MM:8a:ft full=" + ft);
+                        // ------ DEBUG ------
+
+                        // -------- DEBUG --------
+                        //                        List<Filetransfer> ft_res = orma.selectFromFiletransfer().
+                        //                                tox_public_key_stringEq(message.tox_friendpubkey).
+                        //                                orderByIdDesc().
+                        //                                limit(30).toList();
+                        //                        int ii;
+                        //                        Log.i(TAG, "file_recv_control:SQL:9:===============================================");
+                        //                        for (ii = 0; ii < ft_res.size(); ii++)
+                        //                        {
+                        //                            Log.i(TAG, "file_recv_control:SQL:9:" + ft_res.get(ii));
+                        //                        }
+                        //                        Log.i(TAG, "file_recv_control:SQL:9:===============================================");
+                        // -------- DEBUG --------
+
+
+                        // -------- DEBUG --------
+                        //                        ft_res = orma.selectFromFiletransfer().
+                        //                                orderByIdDesc().
+                        //                                limit(30).toList();
+                        //                        Log.i(TAG, "file_recv_control:SQL:A:===============================================");
+                        //                        for (ii = 0; ii < ft_res.size(); ii++)
+                        //                        {
+                        //                            Log.i(TAG, "file_recv_control:SQL:A:" + ft_res.get(ii));
+                        //                        }
+                        //                        Log.i(TAG, "file_recv_control:SQL:A:===============================================");
+                        // -------- DEBUG --------
+
+                        ByteBuffer file_id_buffer = ByteBuffer.allocateDirect(TOX_FILE_ID_LENGTH);
+                        byte[] sha256_buf = TrifaSetPatternActivity.sha256(TrifaSetPatternActivity.StringToBytes2("" + ft.path_name + ":" + ft.file_name + ":" + ft.filesize));
+
+                        Log.i(TAG, "TOX_FILE_ID_LENGTH=" + TOX_FILE_ID_LENGTH + " sha_byte=" + sha256_buf.length);
+
+                        file_id_buffer.put(sha256_buf);
+
+                        // actually start sending the file to friend
+                        long file_number = tox_file_send(tox_friend_by_public_key__wrapper(message.tox_friendpubkey), ToxVars.TOX_FILE_KIND.TOX_FILE_KIND_DATA.value, ft.filesize, file_id_buffer, ft.file_name, ft.file_name.length());
+
+                        Log.i(TAG, "MM2MM:9:new filenum=" + file_number);
+
+                        // update the tox file number in DB -----------
+                        ft.file_number = file_number;
+                        update_filetransfer_db_full(ft);
+                        // update the tox file number in DB -----------
+
+                        Log.i(TAG, "button_ok:OnTouch:009:f_num=" + file_number);
                     }
                     catch (Exception e)
                     {
@@ -306,25 +330,28 @@ public class MessageListHolder_file_outgoing_state_pause_not_yet_started extends
             {
                 if (event.getAction() == MotionEvent.ACTION_DOWN)
                 {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(v.getContext());
-                    builder.setTitle(
-                            v.getContext().getString(R.string.MessageListHolder_file_outgoing_cancel_ft_title));
-                    builder.setMessage(
-                            v.getContext().getString(R.string.MessageListHolder_file_outgoing_cancel_ft_message));
+                    try
+                    {
+                        // cancel FT
+                        Log.i(TAG, "button_cancel:OnTouch:001");
+                        int res = tox_file_control(tox_friend_by_public_key__wrapper(message.tox_friendpubkey), get_filetransfer_filenum_from_id(message.filetransfer_id), TOX_FILE_CONTROL_CANCEL.value);
+                        Log.i(TAG, "button_cancel:OnTouch:res=" + res);
+                        set_filetransfer_state_from_id(message.filetransfer_id, TOX_FILE_CONTROL_CANCEL.value);
+                        set_message_state_from_id(message.id, TOX_FILE_CONTROL_CANCEL.value);
 
-                    builder.setNegativeButton(v.getContext().getString(R.string.MainActivity_no_button), null);
-                    builder.setPositiveButton(v.getContext().getString(R.string.MainActivity_yes_button),
-                                              new DialogInterface.OnClickListener()
-                                              {
-                                                  @Override
-                                                  public void onClick(DialogInterface dialog, int which)
-                                                  {
-                                                      cancel_outgoing_filetransfer(message);
-                                                  }
-                                              });
+                        button_ok.setVisibility(View.GONE);
+                        button_cancel.setVisibility(View.GONE);
+                        ft_progressbar.setVisibility(View.GONE);
 
-                    AlertDialog dialog = builder.create();
-                    dialog.show();
+                        // update message view
+                        update_single_message_from_messge_id(message.id, true);
+                        Log.i(TAG, "button_cancel:OnTouch:099");
+                    }
+                    catch (Exception e)
+                    {
+                        e.printStackTrace();
+                        Log.i(TAG, "button_cancel:OnTouch:EE:" + e.getMessage());
+                    }
                 }
                 else
                 {
@@ -347,23 +374,9 @@ public class MessageListHolder_file_outgoing_state_pause_not_yet_started extends
                     {
                         try
                         {
-                            if (message.storage_frame_work)
-                            {
-                                Uri uri = Uri.parse(message.filename_fullpath);
-                                DocumentFile documentFile = DocumentFile.fromSingleUri(context, uri);
-                                String fileName = documentFile.getName();
-
-                                Intent intent = new Intent(v.getContext(), ImageviewerActivity_SD.class);
-                                intent.putExtra("image_filename", uri.toString());
-                                intent.putExtra("storage_frame_work", "1");
-                                v.getContext().startActivity(intent);
-                            }
-                            else
-                            {
-                                Intent intent = new Intent(v.getContext(), ImageviewerActivity_SD.class);
-                                intent.putExtra("image_filename", message2.filename_fullpath);
-                                v.getContext().startActivity(intent);
-                            }
+                            Intent intent = new Intent(v.getContext(), ImageviewerActivity_SD.class);
+                            intent.putExtra("image_filename", message2.filename_fullpath);
+                            v.getContext().startActivity(intent);
                         }
                         catch (Exception e)
                         {
@@ -379,49 +392,25 @@ public class MessageListHolder_file_outgoing_state_pause_not_yet_started extends
             });
 
 
-            if (message.storage_frame_work)
+            java.io.File f2 = new java.io.File(message2.filename_fullpath);
+            try
             {
-                try
-                {
-                    final RequestOptions glide_options = new RequestOptions().fitCenter().optionalTransform(
-                            new RoundedCorners((int) dp2px(20)));
+                final RequestOptions glide_options = new RequestOptions().fitCenter().optionalTransform(new RoundedCorners((int) dp2px(20)));
 
-                    GlideApp.
-                            with(context).
-                            load(Uri.parse(message.filename_fullpath)).
-                            diskCacheStrategy(DiskCacheStrategy.RESOURCE).
-                            skipMemoryCache(false).
-                            priority(Priority.LOW).
-                            placeholder(R.drawable.round_loading_animation).
-                            into(ft_preview_image);
-                }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
-                }
+                GlideApp.
+                        with(context).
+                        load(f2).
+                        diskCacheStrategy(DiskCacheStrategy.RESOURCE).
+                        skipMemoryCache(false).
+                        priority(Priority.LOW).
+                        placeholder(R.drawable.round_loading_animation).
+                        into(ft_preview_image);
             }
-            else
+            catch (Exception e)
             {
-                java.io.File f2 = new java.io.File(message2.filename_fullpath);
-                try
-                {
-                    final RequestOptions glide_options = new RequestOptions().fitCenter().optionalTransform(
-                            new RoundedCorners((int) dp2px(20)));
-
-                    GlideApp.
-                            with(context).
-                            load(f2).
-                            diskCacheStrategy(DiskCacheStrategy.RESOURCE).
-                            skipMemoryCache(false).
-                            priority(Priority.LOW).
-                            placeholder(R.drawable.round_loading_animation).
-                            into(ft_preview_image);
-                }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
-                }
+                e.printStackTrace();
             }
+
         }
         else
         {
@@ -430,56 +419,7 @@ public class MessageListHolder_file_outgoing_state_pause_not_yet_started extends
                     backgroundColor(Color.TRANSPARENT).
                     color(Color.parseColor("#AA000000")).sizeDp(50);
 
-            // ft_preview_image.setImageDrawable(d3);
-            GlideApp.
-                    with(context).
-                    load(d3).
-                    diskCacheStrategy(DiskCacheStrategy.NONE).
-                    skipMemoryCache(false).
-                    priority(Priority.LOW).
-                    placeholder(R.drawable.round_loading_animation).
-                    into(ft_preview_image);
-        }
-
-        HelperGeneric.set_avatar_img_height_in_chat(img_avatar);
-    }
-
-    private void cancel_outgoing_filetransfer(final Message message)
-    {
-        try
-        {
-            set_filetransfer_state_from_id(message.filetransfer_id, TOX_FILE_CONTROL_CANCEL.value);
-            if (message.ft_outgoing_queued)
-            {
-                set_message_queueing_from_id(message.id, false);
-            }
-            else
-            {
-                // cancel FT
-                Log.i(TAG, "button_cancel:OnTouch:001");
-                int res = tox_file_control(tox_friend_by_public_key__wrapper(message.tox_friendpubkey),
-                                           get_filetransfer_filenum_from_id(message.filetransfer_id),
-                                           TOX_FILE_CONTROL_CANCEL.value);
-                Log.i(TAG, "button_cancel:OnTouch:res=" + res);
-            }
-
-            set_message_state_from_id(message.id, TOX_FILE_CONTROL_CANCEL.value);
-
-            // TODO: cleanup duplicated outgoing files from provider here ************
-            remove_ft_from_cache(message);
-
-            button_ok.setVisibility(View.GONE);
-            button_cancel.setVisibility(View.GONE);
-            ft_progressbar.setVisibility(View.GONE);
-
-            // update message view
-            update_single_message_from_messge_id(message.id, true);
-            Log.i(TAG, "button_cancel:OnTouch:099");
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-            Log.i(TAG, "button_cancel:OnTouch:EE:" + e.getMessage());
+            ft_preview_image.setImageDrawable(d3);
         }
     }
 

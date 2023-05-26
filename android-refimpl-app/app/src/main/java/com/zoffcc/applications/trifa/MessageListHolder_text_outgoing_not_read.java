@@ -24,6 +24,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
+import androidx.appcompat.app.AlertDialog;
+import androidx.recyclerview.widget.RecyclerView;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
@@ -34,17 +36,13 @@ import com.luseen.autolinklibrary.AutoLinkMode;
 import com.luseen.autolinklibrary.AutoLinkOnClickListener;
 import com.luseen.autolinklibrary.EmojiTextViewLinks;
 
-import androidx.appcompat.app.AlertDialog;
-import androidx.recyclerview.widget.RecyclerView;
-
 import static com.zoffcc.applications.trifa.HelperFriend.add_friend_real;
+import static com.zoffcc.applications.trifa.MainActivity.PREF__global_font_size;
 import static com.zoffcc.applications.trifa.HelperGeneric.dp2px;
 import static com.zoffcc.applications.trifa.HelperGeneric.long_date_time_format;
-import static com.zoffcc.applications.trifa.MainActivity.PREF__global_font_size;
 import static com.zoffcc.applications.trifa.MainActivity.selected_messages;
 import static com.zoffcc.applications.trifa.MessageListActivity.onClick_message_helper;
 import static com.zoffcc.applications.trifa.MessageListActivity.onLongClick_message_helper;
-import static com.zoffcc.applications.trifa.MessageListFragment.search_messages_text;
 import static com.zoffcc.applications.trifa.TRIFAGlobals.MESSAGE_EMOJI_ONLY_EMOJI_SIZE;
 import static com.zoffcc.applications.trifa.TRIFAGlobals.MESSAGE_EMOJI_SIZE;
 import static com.zoffcc.applications.trifa.TRIFAGlobals.MESSAGE_TEXT_SIZE;
@@ -120,16 +118,16 @@ public class MessageListHolder_text_outgoing_not_read extends RecyclerView.ViewH
                     if (my_position < 1)
                     {
                         message_text_date_string.setText(
-                                MainActivity.message_list_fragment.adapter.getDateHeaderText(my_position));
+                            MainActivity.message_list_fragment.adapter.getDateHeaderText(my_position));
                         message_text_date.setVisibility(View.VISIBLE);
                     }
                     else
                     {
                         if (!MainActivity.message_list_fragment.adapter.getDateHeaderText(my_position).equals(
-                                MainActivity.message_list_fragment.adapter.getDateHeaderText(my_position - 1)))
+                            MainActivity.message_list_fragment.adapter.getDateHeaderText(my_position - 1)))
                         {
                             message_text_date_string.setText(
-                                    MainActivity.message_list_fragment.adapter.getDateHeaderText(my_position));
+                                MainActivity.message_list_fragment.adapter.getDateHeaderText(my_position));
                             message_text_date.setVisibility(View.VISIBLE);
                         }
                     }
@@ -181,35 +179,12 @@ public class MessageListHolder_text_outgoing_not_read extends RecyclerView.ViewH
             textView.setEmojiSize((int) dp2px(MESSAGE_EMOJI_SIZE[PREF__global_font_size]));
         }
 
-        if ((search_messages_text == null) || (search_messages_text.length() == 0))
-        {
-            textView.setAutoLinkText(m.text);
-        }
-        else
-        {
-            textView.setAutoLinkTextHighlight(m.text, search_messages_text);
-        }
+        textView.setAutoLinkText(m.text);
 
         if (!m.read)
         {
-            if (m.msg_at_relay)
-            {
-                // not yet read, but already at friends relay
-                imageView.setImageResource(R.drawable.circle_orange);
-            }
-            else
-            {
-                if (m.sent_push > 0)
-                {
-                    // push url called with result OK
-                    imageView.setImageResource(R.drawable.circle_orange);
-                }
-                else
-                {
-                    // not yet read
-                    imageView.setImageResource(R.drawable.circle_red);
-                }
-            }
+            // not yet read
+            imageView.setImageResource(R.drawable.circle_red);
         }
         else
         {
@@ -275,23 +250,23 @@ public class MessageListHolder_text_outgoing_not_read extends RecyclerView.ViewH
 
         final AlertDialog.Builder builder = new AlertDialog.Builder(this.context);
         builder.setMessage(url).setTitle(title).
-                setCancelable(false).
-                setPositiveButton("OK", new DialogInterface.OnClickListener()
+            setCancelable(false).
+            setPositiveButton("OK", new DialogInterface.OnClickListener()
+            {
+                public void onClick(DialogInterface dialog, int id)
                 {
-                    public void onClick(DialogInterface dialog, int id)
+                    try
                     {
-                        try
-                        {
-                            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                            c.startActivity(intent);
-                        }
-                        catch (Exception e)
-                        {
-                            e.printStackTrace();
-                        }
-                        dialog.dismiss();
+                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                        c.startActivity(intent);
                     }
-                }).setNegativeButton("Cancel", new DialogInterface.OnClickListener()
+                    catch (Exception e)
+                    {
+                        e.printStackTrace();
+                    }
+                    dialog.dismiss();
+                }
+            }).setNegativeButton("Cancel", new DialogInterface.OnClickListener()
         {
             public void onClick(DialogInterface dialog, int id)
             {
@@ -306,27 +281,27 @@ public class MessageListHolder_text_outgoing_not_read extends RecyclerView.ViewH
     {
         final AlertDialog.Builder builder = new AlertDialog.Builder(this.context);
         builder.setMessage(email_addr).setTitle(title).
-                setCancelable(false).
-                setPositiveButton("OK", new DialogInterface.OnClickListener()
+            setCancelable(false).
+            setPositiveButton("OK", new DialogInterface.OnClickListener()
+            {
+                public void onClick(DialogInterface dialog, int id)
                 {
-                    public void onClick(DialogInterface dialog, int id)
+                    try
                     {
-                        try
-                        {
-                            Intent emailIntent = new Intent(Intent.ACTION_SENDTO,
-                                                            Uri.fromParts("mailto", email_addr, null));
-                            emailIntent.setType("message/rfc822");
-                            // emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Subject");
-                            // emailIntent.putExtra(Intent.EXTRA_TEXT, "Body");
-                            c.startActivity(Intent.createChooser(emailIntent, "Send email..."));
-                        }
-                        catch (Exception e)
-                        {
-                            e.printStackTrace();
-                        }
-                        dialog.dismiss();
+                        Intent emailIntent = new Intent(Intent.ACTION_SENDTO,
+                                                        Uri.fromParts("mailto", email_addr, null));
+                        emailIntent.setType("message/rfc822");
+                        // emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Subject");
+                        // emailIntent.putExtra(Intent.EXTRA_TEXT, "Body");
+                        c.startActivity(Intent.createChooser(emailIntent, "Send email..."));
                     }
-                }).setNegativeButton("Cancel", new DialogInterface.OnClickListener()
+                    catch (Exception e)
+                    {
+                        e.printStackTrace();
+                    }
+                    dialog.dismiss();
+                }
+            }).setNegativeButton("Cancel", new DialogInterface.OnClickListener()
         {
             public void onClick(DialogInterface dialog, int id)
             {
@@ -341,25 +316,25 @@ public class MessageListHolder_text_outgoing_not_read extends RecyclerView.ViewH
     {
         final AlertDialog.Builder builder = new AlertDialog.Builder(this.context);
         builder.setMessage(toxid.toUpperCase()).setTitle(title).
-                setCancelable(false).
-                setPositiveButton("OK", new DialogInterface.OnClickListener()
+            setCancelable(false).
+            setPositiveButton("OK", new DialogInterface.OnClickListener()
+            {
+                public void onClick(DialogInterface dialog, int id)
                 {
-                    public void onClick(DialogInterface dialog, int id)
+                    try
                     {
-                        try
-                        {
-                            String friend_tox_id = toxid.toUpperCase().replace(" ", "").replaceFirst("tox:",
-                                                                                                     "").replaceFirst(
-                                    "TOX:", "").replaceFirst("Tox:", "");
-                            add_friend_real(friend_tox_id);
-                        }
-                        catch (Exception e)
-                        {
-                            e.printStackTrace();
-                        }
-                        dialog.dismiss();
+                        String friend_tox_id = toxid.toUpperCase().replace(" ", "").replaceFirst("tox:",
+                                                                                                 "").replaceFirst(
+                            "TOX:", "").replaceFirst("Tox:", "");
+                        add_friend_real(friend_tox_id);
                     }
-                }).setNegativeButton("Cancel", new DialogInterface.OnClickListener()
+                    catch (Exception e)
+                    {
+                        e.printStackTrace();
+                    }
+                    dialog.dismiss();
+                }
+            }).setNegativeButton("Cancel", new DialogInterface.OnClickListener()
         {
             public void onClick(DialogInterface dialog, int id)
             {

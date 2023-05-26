@@ -16,12 +16,10 @@
         app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"/>
 
     <ScrollView
-        android:id="@+id/buttons_scroll_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
         <LinearLayout
-            android:id="@+id/buttons_large_view"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
@@ -128,26 +126,6 @@
                 android:text="@string/layout___test_ringtone_sound"
                 android:textSize="14sp"/>
 
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/button_iobrowser_start"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="20dp"
-                android:layout_marginRight="20dp"
-                android:layout_marginTop="10dp"
-                android:text="@string/layout___iobrowser_start"
-                android:textSize="14sp"/>
-
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/button_audio_roundtrip_test_start"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="20dp"
-                android:layout_marginRight="20dp"
-                android:layout_marginTop="10dp"
-                android:text="@string/layout___audio_roundtrip_test_start"
-                android:textSize="14sp"/>
-
             <TextView
                 android:id="@+id/text_sqlstats"
                 android:layout_width="match_parent"
@@ -159,7 +137,7 @@
                 android:background="@drawable/rounded_blue_bg"
                 android:padding="5dp"
                 android:text="Database Stats:\nMesssages: 102"
-                android:textColor="@color/text_on_blue_color"
+                android:textColor="@color/md_black_1000"
                 android:textSize="16sp"/>
 
             <TextView
@@ -189,59 +167,7 @@
                 tools:ignore="HardcodedText" />
 
             <TextView
-                android:id="@+id/dummy_0001a"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_marginBottom="10dp"
-                android:layout_marginLeft="25dp"
-                android:layout_marginRight="25dp"
-                android:layout_marginTop="10dp"
-                android:padding="5dp"
-                android:text=""
-                android:background="@null"
-                android:textColor="@null"
-                android:textSize="16sp"/>
-
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/button_export_encrypted_files"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="20dp"
-                android:background="@drawable/rounded_orange_dark_bg"
-                android:layout_marginRight="20dp"
-                android:layout_marginTop="10dp"
-                android:text="@string/layout___export_tox_encrypted_files_unsecure"
-                android:textSize="14sp"
-                tools:ignore="HardcodedText" />
-
-            <TextView
                 android:id="@+id/dummy_0002"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_marginBottom="10dp"
-                android:layout_marginLeft="25dp"
-                android:layout_marginRight="25dp"
-                android:layout_marginTop="10dp"
-                android:padding="5dp"
-                android:text=""
-                android:background="@null"
-                android:textColor="@null"
-                android:textSize="16sp"/>
-
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/button_export_encrypted_chats"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="20dp"
-                android:background="@drawable/rounded_orange_dark_bg"
-                android:layout_marginRight="20dp"
-                android:layout_marginTop="10dp"
-                android:text="@string/layout___export_tox_encrypted_chats_unsecure"
-                android:textSize="14sp"
-                tools:ignore="HardcodedText" />
-
-            <TextView
-                android:id="@+id/dummy_0002b"
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
                 android:layout_marginBottom="10dp"
